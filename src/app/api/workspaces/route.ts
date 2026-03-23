@@ -57,9 +57,14 @@ export async function POST(req: NextRequest) {
     data: {
       name: name.trim(),
       slug,
-      memberships: {
-        create: { userId: session.user.id, role: "owner" },
-      },
+    },
+  });
+
+  await prisma.membership.create({
+    data: {
+      userId: session.user.id,
+      workspaceId: workspace.id,
+      role: "owner",
     },
   });
 
