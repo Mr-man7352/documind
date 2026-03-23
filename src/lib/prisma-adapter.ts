@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 export function PrismaAdapter(): Adapter {
   return {
     async createUser(data: Omit<AdapterUser, "id">) {
+      console.log("Creating user with data:", data);
       const user = await prisma.user.create({
         data: {
           email: data.email,

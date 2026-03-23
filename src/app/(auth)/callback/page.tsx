@@ -15,13 +15,15 @@ export default async function AuthCallbackPage() {
   const membership = await prisma.membership.findFirst({
     where: { userId: session.user.id },
     include: { workspace: true },
-    orderBy: { createdAt: "asc" },
+    orderBy: { createdAt: "desc" },
   });
 
   if (membership) {
     redirect(`/${membership.workspace.slug}/dashboard`);
   }
 
+
+  console.log("No workspace found for user, redirecting to onboarding");
   // New user with no workspace → go to onboarding
   redirect("/onboarding");
 }

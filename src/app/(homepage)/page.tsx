@@ -1,28 +1,12 @@
+import { TopNavbar } from "@/components/public-navbar/top-navbar";
 import Link from "next/link";
-import { redirect } from "next/navigation";
-import { getSession } from "@/lib/auth-session";
 
 export default async function HomePage() {
-  const session = await getSession();
 
-  // Signed-in users go straight to their workspace
-  if (session?.user) {
-    redirect("/callback");
-  }
 
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="border-b bg-white">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-          <h1 className="text-xl font-bold text-gray-900">DocuMind</h1>
-          <Link
-            href="/login"
-            className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 transition-colors"
-          >
-            Sign In
-          </Link>
-        </div>
-      </header>
+      <TopNavbar />
 
       <main className="flex flex-1 flex-col items-center justify-center px-6 text-center">
         <h2 className="max-w-3xl text-5xl font-bold tracking-tight text-gray-900">
