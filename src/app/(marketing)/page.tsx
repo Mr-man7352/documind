@@ -7,7 +7,7 @@ export default async function HomePage() {
 
   // Signed-in users go straight to their workspace
   if (session?.user) {
-    redirect("/auth/callback");
+    redirect("/callback");
   }
 
   return (

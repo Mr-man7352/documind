@@ -1,13 +1,13 @@
 import { getToken } from "next-auth/jwt";
 import { NextRequest, NextResponse } from "next/server";
 
-export async function middleware(req: NextRequest) {
+export async function proxy(req: NextRequest) {
   const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
   const { pathname } = req.nextUrl;
 
   // Already signed in → redirect away from login page
   if (token && pathname === "/login") {
-    return NextResponse.redirect(new URL("/auth/callback", req.url));
+    return NextResponse.redirect(new URL("/callback", req.url));
   }
 
   // Not signed in → redirect to login for protected app routes
@@ -24,7 +24,7 @@ function isPublicPath(pathname: string) {
   return (
     pathname === "/" ||
     pathname === "/login" ||
-    pathname.startsWith("/auth/callback") ||
+    pathname.startsWith("/callback") ||
     pathname.startsWith("/api/auth") ||
     pathname.startsWith("/api/widget") ||
     pathname.startsWith("/_next") ||
