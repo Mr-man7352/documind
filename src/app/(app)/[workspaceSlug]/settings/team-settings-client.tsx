@@ -1,0 +1,239 @@
+"use client";
+
+import { useState } from "react";
+import { sendInvitation, revokeInvitation } from "@/actions/invite";
+import Image from "next/image";
+
+type Member = {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  image: string | null;
+};
+
+type Invitation = {
+  id: string;
+  email: string;
+  role: string;
+  createdAt: string;
+  expiresAt: string;
+};
+
+type Props = {
+  workspaceId: string;
+  canInvite: boolean;
+  members: Member[];
+  invitations: Invitation[];
+};
+
+export function TeamSettingsClient({
+  workspaceId,
+  canInvite,
+  members,
+  invitations: initialInvitations,
+}: Props) {
+  const [email, setEmail] = useState("");
+  const [role, setRole] = useState<"member" | "viewer">("member");
+  const [loading, setLoading] = useState(false);
+  const [toast, setToast] = useState<{
+    message: string;
+    type: "success" | "error";
+  } | null>(null);
+  const [invitations, setInvitations] = useState(initialInvitations);
+
+  function showToast(message: string, type: "success" | "error") {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 4000);
+  }
+
+  async function handleInvite(e: React.SubmitEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (!email) return;
+    setLoading(true);
+
+    const result = await sendInvitation(email, workspaceId, role);
+
+    if (result.error) {
+      showToast(result.error, "error");
+    } else {
+      showToast(
+        result.resent
+          ? `Invitation resent to ${email}`
+          : `Invitation sent to ${email}`,
+        "success",
+      );
+      setEmail("");
+    }
+    setLoading(false);
+  }
+
+  async function handleRevoke(invitationId: string, inviteeEmail: string) {
+    const result = await revokeInvitation(invitationId);
+    if (result.error) {
+      showToast(result.error, "error");
+    } else {
+      setInvitations((prev) => prev.filter((inv) => inv.id !== invitationId));
+      showToast(`Invitation for ${inviteeEmail} revoked.`, "success");
+    }
+  }
+
+  return (
+    <div className="mt-8 space-y-10">
+      {/* ── Invite Form ── */}
+      {canInvite && (
+        <section>
+          <h2 className="text-lg font-semibold text-gray-800 mb-4">
+            Invite a team member
+          </h2>
+          <form
+            onSubmit={handleInvite}
+            className="flex gap-3 items-end flex-wrap"
+          >
+            <div className="flex flex-col gap-1">
+              <label className="text-sm text-gray-600">Email address</label>
+              <input
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="colleague@example.com"
+                className="border border-gray-300 rounded-md px-3 py-2 text-sm w-64 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-sm text-gray-600">Role</label>
+              <select
+                value={role}
+                onChange={(e) => setRole(e.target.value as "member" | "viewer")}
+                className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              >
+                <option value="member">Member</option>
+                <option value="viewer">Viewer</option>
+              </select>
+            </div>
+            <button
+              type="submit"
+              disabled={loading}
+              className="bg-indigo-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+            >
+              {loading ? "Sending…" : "Send invite"}
+            </button>
+          </form>
+        </section>
+      )}
+
+      {/* ── Current Members ── */}
+      <section>
+        <h2 className="text-lg font-semibold text-gray-800 mb-4">
+          Team members ({members.length})
+        </h2>
+        <div className="border border-gray-200 rounded-lg overflow-hidden">
+          {members.map((member) => (
+            <div
+              key={member.id}
+              className="flex items-center justify-between px-4 py-3 border-b border-gray-100 last:border-0"
+            >
+              <div className="flex items-center gap-3">
+                {member.image ? (
+                  <Image
+                    src={member.image}
+                    alt={member.name}
+                    width={32}
+                    height={32}
+                    className="w-8 h-8 rounded-full"
+                  />
+                ) : (
+                  <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 text-sm font-semibold">
+                    {member.name[0]?.toUpperCase()}
+                  </div>
+                )}
+                <div>
+                  <p className="text-sm font-medium text-gray-900">
+                    {member.name}
+                  </p>
+                  <p className="text-xs text-gray-500">{member.email}</p>
+                </div>
+              </div>
+              <RoleBadge role={member.role} />
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ── Pending Invitations ── */}
+      {invitations.length > 0 && (
+        <section>
+          <h2 className="text-lg font-semibold text-gray-800 mb-4">
+            Pending invitations ({invitations.length})
+          </h2>
+          <div className="border border-gray-200 rounded-lg overflow-hidden">
+            {invitations.map((inv) => (
+              <div
+                key={inv.id}
+                className="flex items-center justify-between px-4 py-3 border-b border-gray-100 last:border-0"
+              >
+                <div>
+                  <p className="text-sm font-medium text-gray-900">
+                    {inv.email}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    Expires{" "}
+                    {new Date(inv.expiresAt).toLocaleDateString("en-GB", {
+                      day: "numeric",
+                      month: "short",
+                      year: "numeric",
+                    })}
+                  </p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <RoleBadge role={inv.role} />
+                  <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full font-medium">
+                    Pending
+                  </span>
+                  {canInvite && (
+                    <button
+                      onClick={() => handleRevoke(inv.id, inv.email)}
+                      className="text-xs text-red-500 hover:text-red-700 transition-colors"
+                    >
+                      Revoke
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* ── Toast ── */}
+      {toast && (
+        <div
+          className={`fixed bottom-6 right-6 px-4 py-3 rounded-lg shadow-lg text-sm text-white transition-all ${
+            toast.type === "success" ? "bg-green-600" : "bg-red-600"
+          }`}
+        >
+          {toast.message}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function RoleBadge({ role }: { role: string }) {
+  const styles: Record<string, string> = {
+    owner: "bg-purple-100 text-purple-700",
+    admin: "bg-blue-100 text-blue-700",
+    member: "bg-gray-100 text-gray-700",
+    viewer: "bg-green-100 text-green-700",
+  };
+  return (
+    <span
+      className={`text-xs px-2 py-0.5 rounded-full font-medium capitalize ${
+        styles[role] ?? "bg-gray-100 text-gray-700"
+      }`}
+    >
+      {role}
+    </span>
+  );
+}

@@ -73,6 +73,7 @@ model Workspace {
   documents     Document[]
   conversations Conversation[]
   apiKeys       ApiKey[]
+  invitations   Invitation[]
 }
 
 model Membership {
@@ -137,4 +138,19 @@ model ApiKey {
   createdAt   DateTime  @default(now())
 
   workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model Invitation {
+  id          String   @id @default(cuid())
+  email       String
+  role        String   @default("member") // "member" | "viewer"
+  token       String   @unique @default(uuid())
+  status      String   @default("PENDING") // "PENDING" | "ACCEPTED" | "EXPIRED"
+  expiresAt   DateTime
+  workspaceId String
+  createdAt   DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([email, workspaceId])
 }

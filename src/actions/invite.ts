@@ -1,0 +1,178 @@
+"use server";
+
+import { prisma } from "@/lib/prisma";
+import { requireAuth } from "@/lib/auth-session";
+import { Resend } from "resend";
+
+import InviteEmail from "@/emails/invite-email";
+
+const resend = new Resend(process.env.RESEND_API_KEY);
+
+export async function sendInvitation(
+  email: string,
+  workspaceId: string,
+  role: string,
+) {
+  const session = await requireAuth();
+  const userId = session.user.id;
+
+  // 1. Check the current user is Owner or Admin in this workspace
+  console.log(
+    "Checking permissions for user",
+    userId,
+    "in workspace",
+    workspaceId,
+  );
+  const membership = await prisma.membership.findUnique({
+    where: {
+      userId_workspaceId: {
+        userId,
+        workspaceId,
+      },
+    },
+  });
+
+  if (
+    !membership ||
+    !["OWNER", "ADMIN"].includes(membership.role.toUpperCase())
+  ) {
+    console.log(membership);
+    return { error: "You don't have permission to invite members." };
+  }
+
+  // 2. Check if this person is already a member
+  const workspace = await prisma.workspace.findUnique({
+    where: { id: workspaceId },
+    include: { memberships: { include: { user: true } } },
+  });
+
+  if (!workspace) {
+    return { error: "Workspace not found." };
+  }
+
+  const alreadyMember = workspace.memberships.some(
+    (m) => m.user.email === email,
+  );
+
+  if (alreadyMember) {
+    return { error: "This person is already a member of the workspace." };
+  }
+
+  // 3. Handle duplicate pending invite — resend instead of erroring
+
+  const existing = await prisma.invitation.findUnique({
+    where: { email_workspaceId: { email, workspaceId } },
+  });
+
+  if (existing && existing.status === "PENDING") {
+    //  update the existing invite's token and expiry
+    const updatedInvite = await prisma.invitation.update({
+      where: { id: existing.id },
+      data: {
+        token: crypto.randomUUID(),
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+      },
+    });
+
+    // resend the email with the new token
+    await sendInviteEmail({
+      email,
+      workspaceName: workspace.name,
+      inviterName: session.user.name ?? "Someone",
+      token: updatedInvite.token,
+      role,
+    });
+
+    return { success: true, resent: true };
+  }
+
+  // 4. Create a fresh invitation record
+
+  const invitation = await prisma.invitation.create({
+    data: {
+      email,
+      workspaceId,
+      role,
+      token: crypto.randomUUID(),
+      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+      status: "PENDING",
+    },
+  });
+
+  // 5. Send the email
+  await sendInviteEmail({
+    email,
+    workspaceName: workspace.name,
+    inviterName: session.user.name ?? "Someone",
+    token: invitation.token,
+    role,
+  });
+
+  return { success: true, resent: false };
+}
+
+// ─── Revoke Invitation ─────────────────────────────────────
+
+export async function revokeInvitation(invitationId: string) {
+  const session = await requireAuth();
+  const userId = session.user.id;
+
+  const invitation = await prisma.invitation.findUnique({
+    where: { id: invitationId },
+  });
+
+  if (!invitation) {
+    return { error: "Invitation not found." };
+  }
+
+  // Only Owner/Admin can revoke
+  const membership = await prisma.membership.findUnique({
+    where: {
+      userId_workspaceId: { userId, workspaceId: invitation.workspaceId },
+    },
+  });
+
+  if (
+    !membership ||
+    !["OWNER", "ADMIN"].includes(membership.role.toUpperCase())
+  ) {
+    return { error: "You don't have permission to revoke this invitation." };
+  }
+
+  await prisma.invitation.delete({
+    where: { id: invitationId },
+  });
+
+  return { success: true };
+}
+
+// ─── Helper: Send the actual email ────────────────────────
+async function sendInviteEmail({
+  email,
+  workspaceName,
+  inviterName,
+  token,
+  role,
+}: {
+  email: string;
+  workspaceName: string;
+  inviterName: string;
+  token: string;
+  role: string;
+}) {
+  const inviteUrl = `${process.env.NEXTAUTH_URL}/invite/${token}`;
+
+  const res = await resend.emails.send({
+    from: "DocuMind <onboarding@resend.dev>", // ← update this
+    to: email,
+    subject: `${inviterName} invited you to join ${workspaceName} on DocuMind`,
+    react: InviteEmail({
+      workspaceName,
+      inviterName,
+      inviteUrl,
+      role,
+    }),
+  });
+
+  console.log("Email send response:", res);
+}

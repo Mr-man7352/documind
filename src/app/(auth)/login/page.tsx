@@ -12,7 +12,8 @@ function LoginContent() {
   const handleSignIn = async (provider: string) => {
     setLoading(provider);
     try {
-      await signIn(provider, { callbackUrl: "/callback" });
+      const callbackUrl = searchParams.get("callbackUrl") ?? "/callback";
+      await signIn(provider, { callbackUrl });
     } catch {
       setLoading(null);
     }

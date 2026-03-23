@@ -1,6 +1,8 @@
-import { NextResponse } from "next/server";
+import { serve } from "inngest/next";
+import { inngest } from "@/lib/inngest";
+import { expireInvitations } from "@/inngest/expire-invitations";
 
-export async function POST() {
-  // TODO: Wire up Inngest serve handler for background jobs
-  return NextResponse.json({ message: "Inngest webhook — not yet implemented" });
-}
+export const { GET, POST, PUT } = serve({
+  client: inngest,
+  functions: [expireInvitations],
+});
