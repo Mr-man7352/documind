@@ -116,9 +116,9 @@ model Conversation {
 
 model Message {
   id             String   @id @default(cuid())
-  role           String   // "user" | "assistant"
+  role           String // "user" | "assistant"
   content        String   @db.Text
-  sources        Json?    // source citations from RAG
+  sources        Json? // source citations from RAG
   tokenCount     Int?
   conversationId String
   userId         String?
