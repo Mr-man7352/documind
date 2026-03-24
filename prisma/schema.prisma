@@ -60,6 +60,7 @@ model User {
   sessions    Session[]
   memberships Membership[]
   messages    Message[]
+  documents   Document[]
 }
 
 model Workspace {
@@ -90,18 +91,23 @@ model Membership {
 }
 
 model Document {
-  id          String   @id @default(cuid())
-  title       String
-  fileUrl     String
-  fileType    String
-  status      String   @default("pending") // "pending" | "processing" | "ready" | "failed"
-  pageCount   Int?
-  tokenCount  Int?
-  workspaceId String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id           String   @id @default(cuid())
+  title        String
+  fileUrl      String
+  fileType     String
+  fileSize     Int? // add this
+  status       String   @default("UPLOADED") // change default
+  // status values: UPLOADED | PARSING | CHUNKING | EMBEDDING | INDEXED | ERROR
+  errorMessage String? // add this (for failed docs)
+  pageCount    Int?
+  tokenCount   Int?
+  workspaceId  String
+  uploadedById String? // add this
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
-  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  workspace  Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  uploadedBy User?     @relation(fields: [uploadedById], references: [id]) // add this
 }
 
 model Conversation {
