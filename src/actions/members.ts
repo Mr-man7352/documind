@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth-session";
 import { checkUserPermission } from "@/lib/permissions";
+import { VALID_ROLES } from "@/lib/roles";
 
 // change role of a member
 
@@ -11,6 +12,11 @@ export async function changeRole(
   newRole: string,
   workspaceId: string,
 ) {
+  // Validate the role is a known value
+  if (!VALID_ROLES.includes(newRole as (typeof VALID_ROLES)[number])) {
+    return { error: "Invalid role." };
+  }
+
   const session = await requireAuth();
   const userId = session.user.id;
 

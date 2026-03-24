@@ -4,15 +4,7 @@ import { useState } from "react";
 import { sendInvitation, revokeInvitation } from "@/actions/invite";
 import { changeRole, removeMember } from "@/actions/members";
 import Image from "next/image";
-
-const ROLE_HIERARCHY: Record<string, number> = {
-  owner: 4,
-  admin: 3,
-  member: 2,
-  viewer: 1,
-};
-
-const ASSIGNABLE_ROLES = ["owner", "admin", "member", "viewer"] as const;
+import { ROLE_HIERARCHY, VALID_ROLES } from "@/lib/roles";
 
 type Member = {
   id: string;
@@ -224,7 +216,7 @@ export function TeamSettingsClient({
                       onChange={(e) => handleChangeRole(member, e.target.value)}
                       className="border border-gray-300 rounded-md px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     >
-                      {ASSIGNABLE_ROLES.filter(
+                      {VALID_ROLES.filter(
                         (r) => ROLE_HIERARCHY[r] < callerLevel,
                       ).map((r) => (
                         <option key={r} value={r}>

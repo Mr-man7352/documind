@@ -9,11 +9,18 @@ import InviteEmail from "@/emails/invite-email";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
+const INVITABLE_ROLES = ["member", "viewer"] as const;
+
 export async function sendInvitation(
   email: string,
   workspaceId: string,
   role: string,
 ) {
+  // 0. Validate the role — only "member" and "viewer" can be invited
+  if (!INVITABLE_ROLES.includes(role as (typeof INVITABLE_ROLES)[number])) {
+    return { error: "Invalid role. You can only invite members or viewers." };
+  }
+
   const session = await requireAuth();
   const userId = session.user.id;
 
@@ -74,13 +81,17 @@ export async function sendInvitation(
     });
 
     // resend the email with the new token
-    await sendInviteEmail({
-      email,
-      workspaceName: workspace.name,
-      inviterName: session.user.name ?? "Someone",
-      token: updatedInvite.token,
-      role,
-    });
+    try {
+      await sendInviteEmail({
+        email,
+        workspaceName: workspace.name,
+        inviterName: session.user.name ?? "Someone",
+        token: updatedInvite.token,
+        role,
+      });
+    } catch {
+      return { error: "Failed to send invitation email. Please try again." };
+    }
 
     return { success: true, resent: true };
   }
@@ -99,13 +110,19 @@ export async function sendInvitation(
   });
 
   // 5. Send the email
-  await sendInviteEmail({
-    email,
-    workspaceName: workspace.name,
-    inviterName: session.user.name ?? "Someone",
-    token: invitation.token,
-    role,
-  });
+  try {
+    await sendInviteEmail({
+      email,
+      workspaceName: workspace.name,
+      inviterName: session.user.name ?? "Someone",
+      token: invitation.token,
+      role,
+    });
+  } catch {
+    // Email failed — delete the orphan invitation so user can retry
+    await prisma.invitation.delete({ where: { id: invitation.id } });
+    return { error: "Failed to send invitation email. Please try again." };
+  }
 
   return { success: true, resent: false };
 }
@@ -160,7 +177,7 @@ async function sendInviteEmail({
 }) {
   const inviteUrl = `${process.env.NEXTAUTH_URL}/invite/${token}`;
 
-  const res = await resend.emails.send({
+  const { data, error } = await resend.emails.send({
     from: "DocuMind <onboarding@resend.dev>", // ← update this
     to: email,
     subject: `${inviterName} invited you to join ${workspaceName} on DocuMind`,
@@ -172,5 +189,9 @@ async function sendInviteEmail({
     }),
   });
 
-  console.log("Email send response:", res);
+  if (error) {
+    throw new Error(`Failed to send email: ${error.message}`);
+  }
+
+  console.log("Email sent successfully:", data?.id);
 }

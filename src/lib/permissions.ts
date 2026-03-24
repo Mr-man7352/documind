@@ -1,11 +1,7 @@
 import { prisma } from "@/lib/prisma";
+import { ROLE_HIERARCHY, VALID_ROLES } from "@/lib/roles";
 
-export const ROLE_HIERARCHY: Record<string, number> = {
-  owner: 4,
-  admin: 3,
-  member: 2,
-  viewer: 1,
-};
+export { ROLE_HIERARCHY, VALID_ROLES };
 
 export async function checkUserPermission(
   userId: string,
