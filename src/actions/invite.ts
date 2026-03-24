@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth-session";
 import { Resend } from "resend";
+import { checkUserPermission } from "@/lib/permissions";
 
 import InviteEmail from "@/emails/invite-email";
 
@@ -32,11 +33,9 @@ export async function sendInvitation(
     },
   });
 
-  if (
-    !membership ||
-    !["OWNER", "ADMIN"].includes(membership.role.toUpperCase())
-  ) {
-    console.log(membership);
+  try {
+    await checkUserPermission(userId, workspaceId, "admin");
+  } catch {
     return { error: "You don't have permission to invite members." };
   }
 
@@ -132,10 +131,9 @@ export async function revokeInvitation(invitationId: string) {
     },
   });
 
-  if (
-    !membership ||
-    !["OWNER", "ADMIN"].includes(membership.role.toUpperCase())
-  ) {
+  try {
+    await checkUserPermission(userId, invitation.workspaceId, "admin");
+  } catch {
     return { error: "You don't have permission to revoke this invitation." };
   }
 

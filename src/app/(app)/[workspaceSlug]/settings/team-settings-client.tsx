@@ -2,7 +2,17 @@
 
 import { useState } from "react";
 import { sendInvitation, revokeInvitation } from "@/actions/invite";
+import { changeRole, removeMember } from "@/actions/members";
 import Image from "next/image";
+
+const ROLE_HIERARCHY: Record<string, number> = {
+  owner: 4,
+  admin: 3,
+  member: 2,
+  viewer: 1,
+};
+
+const ASSIGNABLE_ROLES = ["owner", "admin", "member", "viewer"] as const;
 
 type Member = {
   id: string;
@@ -23,6 +33,8 @@ type Invitation = {
 type Props = {
   workspaceId: string;
   canInvite: boolean;
+  currentUserId: string;
+  currentUserRole: string;
   members: Member[];
   invitations: Invitation[];
 };
@@ -30,7 +42,9 @@ type Props = {
 export function TeamSettingsClient({
   workspaceId,
   canInvite,
-  members,
+  currentUserId,
+  currentUserRole,
+  members: initialMembers,
   invitations: initialInvitations,
 }: Props) {
   const [email, setEmail] = useState("");
@@ -41,6 +55,11 @@ export function TeamSettingsClient({
     type: "success" | "error";
   } | null>(null);
   const [invitations, setInvitations] = useState(initialInvitations);
+  const [members, setMembers] = useState(initialMembers);
+  const [confirmRemove, setConfirmRemove] = useState<Member | null>(null);
+
+  const canManageRoles =
+    ROLE_HIERARCHY[currentUserRole] >= ROLE_HIERARCHY["admin"];
 
   function showToast(message: string, type: "success" | "error") {
     setToast({ message, type });
@@ -51,9 +70,7 @@ export function TeamSettingsClient({
     e.preventDefault();
     if (!email) return;
     setLoading(true);
-
     const result = await sendInvitation(email, workspaceId, role);
-
     if (result.error) {
       showToast(result.error, "error");
     } else {
@@ -76,6 +93,30 @@ export function TeamSettingsClient({
       setInvitations((prev) => prev.filter((inv) => inv.id !== invitationId));
       showToast(`Invitation for ${inviteeEmail} revoked.`, "success");
     }
+  }
+
+  async function handleChangeRole(member: Member, newRole: string) {
+    const result = await changeRole(member.id, newRole, workspaceId);
+    if (result.error) {
+      showToast(result.error, "error");
+    } else {
+      setMembers((prev) =>
+        prev.map((m) => (m.id === member.id ? { ...m, role: newRole } : m)),
+      );
+      showToast(`${member.name}'s role updated to ${newRole}.`, "success");
+    }
+  }
+
+  async function handleRemoveConfirmed() {
+    if (!confirmRemove) return;
+    const result = await removeMember(confirmRemove.id, workspaceId);
+    if (result.error) {
+      showToast(result.error, "error");
+    } else {
+      setMembers((prev) => prev.filter((m) => m.id !== confirmRemove.id));
+      showToast(`${confirmRemove.name} has been removed.`, "success");
+    }
+    setConfirmRemove(null);
   }
 
   return (
@@ -129,35 +170,84 @@ export function TeamSettingsClient({
           Team members ({members.length})
         </h2>
         <div className="border border-gray-200 rounded-lg overflow-hidden">
-          {members.map((member) => (
-            <div
-              key={member.id}
-              className="flex items-center justify-between px-4 py-3 border-b border-gray-100 last:border-0"
-            >
-              <div className="flex items-center gap-3">
-                {member.image ? (
-                  <Image
-                    src={member.image}
-                    alt={member.name}
-                    width={32}
-                    height={32}
-                    className="w-8 h-8 rounded-full"
-                  />
-                ) : (
-                  <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 text-sm font-semibold">
-                    {member.name[0]?.toUpperCase()}
+          {members.map((member) => {
+            const isSelf = member.id === currentUserId;
+            const callerLevel = ROLE_HIERARCHY[currentUserRole] ?? 0;
+            const targetLevel = ROLE_HIERARCHY[member.role] ?? 0;
+            // You can only manage someone at a lower level than you
+            const canManageThisMember =
+              canManageRoles && callerLevel > targetLevel;
+            console.log(
+              "Managing member",
+              member.name,
+              "Caller level:",
+              callerLevel,
+              "Target level:",
+              targetLevel,
+              "Can manage?",
+              canManageThisMember,
+            );
+
+            return (
+              <div
+                key={member.id}
+                className="flex items-center justify-between px-4 py-3 border-b border-gray-100 last:border-0"
+              >
+                {/* Avatar + name */}
+                <div className="flex items-center gap-3">
+                  {member.image ? (
+                    <Image
+                      src={member.image}
+                      alt={member.name}
+                      width={32}
+                      height={32}
+                      className="w-8 h-8 rounded-full"
+                    />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 text-sm font-semibold">
+                      {member.name[0]?.toUpperCase()}
+                    </div>
+                  )}
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">
+                      {member.name} {isSelf && "(you)"}
+                    </p>
+                    <p className="text-xs text-gray-500">{member.email}</p>
                   </div>
-                )}
-                <div>
-                  <p className="text-sm font-medium text-gray-900">
-                    {member.name}
-                  </p>
-                  <p className="text-xs text-gray-500">{member.email}</p>
+                </div>
+
+                {/* Role control + remove */}
+                <div className="flex items-center gap-3">
+                  {canManageThisMember ? (
+                    <select
+                      value={member.role}
+                      onChange={(e) => handleChangeRole(member, e.target.value)}
+                      className="border border-gray-300 rounded-md px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    >
+                      {ASSIGNABLE_ROLES.filter(
+                        (r) => ROLE_HIERARCHY[r] < callerLevel,
+                      ).map((r) => (
+                        <option key={r} value={r}>
+                          {r.charAt(0).toUpperCase() + r.slice(1)}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <RoleBadge role={member.role} />
+                  )}
+
+                  {canManageThisMember && (
+                    <button
+                      onClick={() => setConfirmRemove(member)}
+                      className="text-xs text-red-500 hover:text-red-700 transition-colors"
+                    >
+                      Remove
+                    </button>
+                  )}
                 </div>
               </div>
-              <RoleBadge role={member.role} />
-            </div>
-          ))}
+            );
+          })}
         </div>
       </section>
 
@@ -204,6 +294,36 @@ export function TeamSettingsClient({
             ))}
           </div>
         </section>
+      )}
+
+      {/* ── Confirm Remove Dialog ── */}
+      {confirmRemove && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-sm mx-4">
+            <h3 className="text-base font-semibold text-gray-900 mb-2">
+              Remove member?
+            </h3>
+            <p className="text-sm text-gray-600 mb-6">
+              This will remove{" "}
+              <span className="font-medium">{confirmRemove.name}</span> from the
+              workspace. They will lose access immediately.
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setConfirmRemove(null)}
+                className="px-4 py-2 text-sm rounded-md border border-gray-300 hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleRemoveConfirmed}
+                className="px-4 py-2 text-sm rounded-md bg-red-600 text-white hover:bg-red-700 transition-colors"
+              >
+                Remove
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* ── Toast ── */}

@@ -78,7 +78,7 @@ model Workspace {
 
 model Membership {
   id          String   @id @default(cuid())
-  role        String   @default("member") // "owner" | "admin" | "member"
+  role        String   @default("member") // "owner" | "admin" | "member" | "viewer"
   userId      String
   workspaceId String
   createdAt   DateTime @default(now())

@@ -54,6 +54,8 @@ export default async function SettingsPage({
       <TeamSettingsClient
         workspaceId={workspace.id}
         canInvite={canInvite}
+        currentUserId={session.user.id}
+        currentUserRole={membership?.role ?? "member"}
         members={members.map((m) => ({
           id: m.id,
           name: m.user.name ?? "Unknown",
