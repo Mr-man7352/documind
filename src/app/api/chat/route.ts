@@ -13,7 +13,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { messages, workspaceId }: { messages: UIMessage[]; workspaceId: string } = await req.json();
+  const {
+    messages,
+    workspaceId,
+    conversationId,
+  }: { messages: UIMessage[]; workspaceId: string; conversationId: string } =
+    await req.json();
 
   if (!workspaceId) {
     return NextResponse.json(
@@ -77,46 +82,50 @@ ${contextBlock}
 
   // Stream the response
   const result = streamText({
-    model: openai("gpt-4o-mini"),
+    model: openai("gpt-5-nano"), // will use the chepest available gpt-5 model
     system: systemPrompt,
     messages: await convertToModelMessages(messages),
-    temperature: 0.3,
     maxOutputTokens: 1500,
     onFinish: async ({ text }) => {
       // Persist conversation and messages asynchronously (non-blocking)
       try {
         const userId = (session.user as { id: string }).id;
 
-        const conversation = await prisma.conversation.create({
+        // Manual find-or-create (upsert uses transactions, not supported in HTTP mode)
+        const existing = await prisma.conversation.findUnique({
+          where: { id: conversationId },
+        });
+
+        if (!existing) {
+          await prisma.conversation.create({
+            data: {
+              id: conversationId,
+              workspaceId,
+              title: lastMessageText.slice(0, 80),
+            },
+          });
+        }
+        // Only save the NEW messages — last user message + this assistant response
+
+        await prisma.message.create({
           data: {
-            workspaceId,
-            title: lastMessageText.slice(0, 80),
+            role: "user",
+            content: lastMessageText,
+            conversationId,
+            userId,
           },
         });
 
-        const userMessages = messages.map((m) => ({
-            role: m.role,
-            content: m.parts
-              .filter((p) => p.type === "text")
-              .map((p) => (p as { type: "text"; text: string }).text)
-              .join(" "),
-            conversationId: conversation.id,
-            userId: m.role === "user" ? userId : null,
-          }));
-
-        await prisma.message.createMany({
-          data: [
-            ...userMessages,
-            {
-              role: "assistant",
-              content: text,
-              conversationId: conversation.id,
-              sources: chunks.map((c) => ({
-                title: c.title,
-                documentId: c.documentId,
-              })),
-            },
-          ],
+        await prisma.message.create({
+          data: {
+            role: "assistant",
+            content: text,
+            conversationId,
+            sources: chunks.map((c) => ({
+              title: c.title,
+              documentId: c.documentId,
+            })),
+          },
         });
       } catch (err) {
         console.error("Failed to persist conversation:", err);

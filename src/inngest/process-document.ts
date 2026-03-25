@@ -107,7 +107,6 @@ export const processDocument = inngest.createFunction(
         // Upsert in batches of 100 (Pinecone limit)
         const BATCH_SIZE = 100;
         for (let i = 0; i < vectors.length; i += BATCH_SIZE) {
-          // await index.upsert(vectors.slice(i, i + BATCH_SIZE));
           await index.upsert({ records: vectors.slice(i, i + BATCH_SIZE) });
         }
 

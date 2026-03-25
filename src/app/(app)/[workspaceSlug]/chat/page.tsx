@@ -20,6 +20,11 @@ export default async function ChatPage({
 
   if (!workspace || workspace.memberships.length === 0) notFound();
 
+  const hasDocuments =
+    (await prisma.document.count({
+      where: { workspaceId: workspace.id, status: "INDEXED" },
+    })) > 0;
+
   return (
     <div className="flex flex-col h-full -m-8 p-8">
       <div className="mb-4 shrink-0">
@@ -28,7 +33,7 @@ export default async function ChatPage({
           Ask questions about your documents.
         </p>
       </div>
-      <ChatClient workspaceId={workspace.id} />
+      <ChatClient workspaceId={workspace.id} hasDocuments={hasDocuments} />
     </div>
   );
 }
