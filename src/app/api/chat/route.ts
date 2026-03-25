@@ -60,9 +60,17 @@ export async function POST(req: NextRequest) {
 
   const chunks = queryResult.matches
     .filter((m) => m.score && m.score > 0.3)
-    .map(
-      (m) => m.metadata as { text: string; title: string; documentId: string },
-    );
+    .map((m) => ({
+      ...(m.metadata as {
+        text: string;
+        title: string;
+        documentId: string;
+        pageNumber?: number;
+        chunkIndex?: number;
+      }),
+      score: m.score ?? 0,
+      vectorId: m.id,
+    }));
 
   // Build system prompt with retrieved context
   const contextBlock =
@@ -124,6 +132,11 @@ ${contextBlock}
             sources: chunks.map((c) => ({
               title: c.title,
               documentId: c.documentId,
+              pageNumber: c.pageNumber ?? null,
+              chunkIndex: c.chunkIndex ?? null,
+              score: c.score,
+              text: c.text,
+              vectorId: c.vectorId,
             })),
           },
         });
@@ -133,5 +146,8 @@ ${contextBlock}
     },
   });
 
-  return result.toUIMessageStreamResponse();
+  return result.toUIMessageStreamResponse({
+    messageMetadata: ({ part }) =>
+      part.type === "text-start" ? { sources: chunks } : undefined,
+  });
 }

@@ -2,7 +2,9 @@
 
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { SourceChips, Source } from "./source-chips";
+import { SourcePanel } from "./source-panel";
 import { Send, Square, MessageSquare } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
@@ -15,6 +17,9 @@ interface ChatClientProps {
 
 export function ChatClient({ workspaceId, hasDocuments }: ChatClientProps) {
   const conversationIdRef = useRef<string>(crypto.randomUUID());
+
+  const [selectedSource, setSelectedSource] = useState<Source | null>(null);
+  const [selectedIndex, setSelectedIndex] = useState<number>(0);
 
   const { messages, sendMessage, status, stop } = useChat({
     transport: new DefaultChatTransport({
@@ -80,6 +85,9 @@ export function ChatClient({ workspaceId, hasDocuments }: ChatClientProps) {
             ) : (
               messages.map((message) => {
                 const isUser = message.role === "user";
+                const sources =
+                  (message.metadata as { sources?: Source[] })?.sources ?? [];
+
                 return (
                   <div
                     key={message.id}
@@ -90,97 +98,115 @@ export function ChatClient({ workspaceId, hasDocuments }: ChatClientProps) {
                   >
                     <div
                       className={cn(
-                        "max-w-[75%] rounded-2xl px-4 py-3 text-sm leading-relaxed",
-                        isUser
-                          ? "bg-primary text-primary-foreground rounded-br-sm"
-                          : "bg-muted text-foreground rounded-bl-sm",
+                        "flex flex-col max-w-[75%]",
+                        isUser ? "items-end" : "items-start",
                       )}
                     >
-                      {message.parts.map((part, i) =>
-                        part.type === "text" ? (
-                          isUser ? (
-                            <span key={i} className="whitespace-pre-wrap">
-                              {part.text}
-                            </span>
-                          ) : (
-                            <ReactMarkdown
-                              key={i}
-                              remarkPlugins={[remarkGfm]}
-                              components={{
-                                p: ({ children }) => (
-                                  <p className="mb-2 last:mb-0">{children}</p>
-                                ),
-                                ul: ({ children }) => (
-                                  <ul className="list-disc pl-4 mb-2 space-y-1">
-                                    {children}
-                                  </ul>
-                                ),
-                                ol: ({ children }) => (
-                                  <ol className="list-decimal pl-4 mb-2 space-y-1">
-                                    {children}
-                                  </ol>
-                                ),
-                                li: ({ children }) => <li>{children}</li>,
-                                strong: ({ children }) => (
-                                  <strong className="font-semibold">
-                                    {children}
-                                  </strong>
-                                ),
-                                em: ({ children }) => (
-                                  <em className="italic">{children}</em>
-                                ),
-                                code: ({ children, className }) => {
-                                  const isBlock =
-                                    className?.includes("language-");
-                                  return isBlock ? (
-                                    <code className="block bg-black/10 rounded-md px-3 py-2 text-xs font-mono my-2 whitespace-pre-wrap overflow-x-auto">
+                      <div
+                        className={cn(
+                          "rounded-2xl px-4 py-3 text-sm leading-relaxed w-full",
+                          isUser
+                            ? "bg-primary text-primary-foreground rounded-br-sm"
+                            : "bg-muted text-foreground rounded-bl-sm",
+                        )}
+                      >
+                        {message.parts.map((part, i) =>
+                          part.type === "text" ? (
+                            isUser ? (
+                              <span key={i} className="whitespace-pre-wrap">
+                                {part.text}
+                              </span>
+                            ) : (
+                              <ReactMarkdown
+                                key={i}
+                                remarkPlugins={[remarkGfm]}
+                                components={{
+                                  p: ({ children }) => (
+                                    <p className="mb-2 last:mb-0">{children}</p>
+                                  ),
+                                  ul: ({ children }) => (
+                                    <ul className="list-disc pl-4 mb-2 space-y-1">
                                       {children}
-                                    </code>
-                                  ) : (
-                                    <code className="bg-black/10 rounded px-1 py-0.5 text-xs font-mono">
+                                    </ul>
+                                  ),
+                                  ol: ({ children }) => (
+                                    <ol className="list-decimal pl-4 mb-2 space-y-1">
                                       {children}
-                                    </code>
-                                  );
-                                },
-                                pre: ({ children }) => (
-                                  <pre className="my-2">{children}</pre>
-                                ),
-                                h1: ({ children }) => (
-                                  <h1 className="text-base font-bold mb-1">
-                                    {children}
-                                  </h1>
-                                ),
-                                h2: ({ children }) => (
-                                  <h2 className="text-sm font-bold mb-1">
-                                    {children}
-                                  </h2>
-                                ),
-                                h3: ({ children }) => (
-                                  <h3 className="text-sm font-semibold mb-1">
-                                    {children}
-                                  </h3>
-                                ),
-                                a: ({ href, children }) => (
-                                  <a
-                                    href={href}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="underline underline-offset-2 hover:opacity-80"
-                                  >
-                                    {children}
-                                  </a>
-                                ),
-                                blockquote: ({ children }) => (
-                                  <blockquote className="border-l-2 border-current/30 pl-3 italic opacity-80 my-2">
-                                    {children}
-                                  </blockquote>
-                                ),
-                              }}
-                            >
-                              {part.text}
-                            </ReactMarkdown>
-                          )
-                        ) : null,
+                                    </ol>
+                                  ),
+                                  li: ({ children }) => <li>{children}</li>,
+                                  strong: ({ children }) => (
+                                    <strong className="font-semibold">
+                                      {children}
+                                    </strong>
+                                  ),
+                                  em: ({ children }) => (
+                                    <em className="italic">{children}</em>
+                                  ),
+                                  code: ({ children, className }) => {
+                                    const isBlock =
+                                      className?.includes("language-");
+                                    return isBlock ? (
+                                      <code className="block bg-black/10 rounded-md px-3 py-2 text-xs font-mono my-2 whitespace-pre-wrap overflow-x-auto">
+                                        {children}
+                                      </code>
+                                    ) : (
+                                      <code className="bg-black/10 rounded px-1 py-0.5 text-xs font-mono">
+                                        {children}
+                                      </code>
+                                    );
+                                  },
+                                  pre: ({ children }) => (
+                                    <pre className="my-2">{children}</pre>
+                                  ),
+                                  h1: ({ children }) => (
+                                    <h1 className="text-base font-bold mb-1">
+                                      {children}
+                                    </h1>
+                                  ),
+                                  h2: ({ children }) => (
+                                    <h2 className="text-sm font-bold mb-1">
+                                      {children}
+                                    </h2>
+                                  ),
+                                  h3: ({ children }) => (
+                                    <h3 className="text-sm font-semibold mb-1">
+                                      {children}
+                                    </h3>
+                                  ),
+                                  a: ({ href, children }) => (
+                                    <a
+                                      href={href}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="underline underline-offset-2 hover:opacity-80"
+                                    >
+                                      {children}
+                                    </a>
+                                  ),
+                                  blockquote: ({ children }) => (
+                                    <blockquote className="border-l-2 border-current/30 pl-3 italic opacity-80 my-2">
+                                      {children}
+                                    </blockquote>
+                                  ),
+                                }}
+                              >
+                                {part.text}
+                              </ReactMarkdown>
+                            )
+                          ) : null,
+                        )}
+                      </div>
+
+                      {/* Source chips — only for assistant messages */}
+                      {!isUser && (
+                        <SourceChips
+                          sources={sources}
+                          onSourceClick={(source, index) => {
+                            setSelectedSource(source);
+                            setSelectedIndex(index);
+                          }}
+                        />
                       )}
                     </div>
                   </div>
@@ -239,6 +265,13 @@ export function ChatClient({ workspaceId, hasDocuments }: ChatClientProps) {
               Enter to send · Shift+Enter for new line
             </p>
           </div>
+
+          {/* ── Source panel (slide-in on chip click) ── */}
+          <SourcePanel
+            source={selectedSource}
+            index={selectedIndex}
+            onClose={() => setSelectedSource(null)}
+          />
         </div>
       )}
     </>
