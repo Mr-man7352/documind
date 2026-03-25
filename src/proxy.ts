@@ -27,13 +27,12 @@ function isPublicPath(pathname: string) {
     pathname.startsWith("/callback") ||
     pathname.startsWith("/api/auth") ||
     pathname.startsWith("/api/widget") ||
+    pathname.startsWith("/api/webhook") ||
     pathname.startsWith("/_next") ||
     pathname.startsWith("/favicon")
   );
 }
 
 export const config = {
-  matcher: [
-    "/((?!_next/static|_next/image|favicon.ico).*)",
-  ],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
 };

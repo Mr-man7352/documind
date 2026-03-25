@@ -3,6 +3,7 @@ import { put } from "@vercel/blob";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { inngest } from "@/lib/inngest";
 
 const ACCEPTED_MIME = [
   "application/pdf",
@@ -77,10 +78,13 @@ export async function POST(req: NextRequest) {
   }
 
   // 6. Upload to Vercel Blob
-  const blob = await put(file.name, file, { access: "private" });
+  const blob = await put(file.name, file, {
+    access: "private",
+    allowOverwrite: true,
+  });
 
   // 7. Create DB record
-  await prisma.document.create({
+  const document = await prisma.document.create({
     data: {
       title: file.name,
       fileUrl: blob.url,
@@ -90,6 +94,12 @@ export async function POST(req: NextRequest) {
       workspaceId: workspace.id,
       uploadedById: session.user.id,
     },
+  });
+
+  // 8. Trigger the processing pipeline
+  await inngest.send({
+    name: "document.uploaded",
+    data: { documentId: document.id },
   });
 
   return NextResponse.json({ success: true });

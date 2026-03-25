@@ -167,7 +167,11 @@ export function DocumentsClient({
                       {formatBytes(doc.fileSize)}
                     </td>
                     <td className="px-4 py-3 text-muted-foreground hidden md:table-cell">
-                      {new Date(doc.createdAt).toLocaleDateString()}
+                      {new Date(doc.createdAt).toLocaleDateString("en-GB", {
+                        day: "numeric",
+                        month: "short",
+                        year: "numeric",
+                      })}
                     </td>
                   </tr>
                 ))}
