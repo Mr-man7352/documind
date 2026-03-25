@@ -19,15 +19,21 @@ export default async function DocumentsPage({
 
   if (!workspace || workspace.memberships.length === 0) notFound();
 
-  // Fetch documents newest-first
-  const documents = await prisma.document.findMany({
+  // Fetch documents newest-first, including who uploaded each one
+  const documents = (await prisma.document.findMany({
     where: { workspaceId: workspace.id },
     orderBy: { createdAt: "desc" },
-  });
+    include: {
+      uploadedBy: {
+        select: { name: true },
+      },
+    },
+  })) as Parameters<typeof DocumentsClient>[0]["initialDocuments"];
 
   return (
     <DocumentsClient
       workspaceSlug={workspaceSlug}
+      workspaceId={workspace.id}
       initialDocuments={documents}
       userRole={workspace.memberships[0].role}
     />
