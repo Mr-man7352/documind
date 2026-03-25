@@ -4,11 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth-session";
 import { checkUserPermission } from "@/lib/permissions";
 import { inngest } from "@/lib/inngest";
-import { Pinecone } from "@pinecone-database/pinecone";
-
-const pinecone = new Pinecone({
-  apiKey: process.env.PINECONE_API_KEY!,
-});
+import { pineconeIndex } from "@/lib/pinecone";
 
 export async function deleteDocument(documentId: string, workspaceId: string) {
   const session = await requireAuth();
@@ -27,9 +23,7 @@ export async function deleteDocument(documentId: string, workspaceId: string) {
 
   // Delete vectors from Pinecone (best-effort — log but don't block DB delete)
   try {
-    const index = pinecone
-      .index({ name: process.env.PINECONE_INDEX! })
-      .namespace(workspaceId);
+    const index = pineconeIndex.namespace(document.workspaceId);
 
     await index.deleteMany({
       filter: {

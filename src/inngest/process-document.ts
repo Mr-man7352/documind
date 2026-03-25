@@ -1,14 +1,10 @@
 import { inngest } from "@/lib/inngest";
 import { prisma } from "@/lib/prisma";
+import { pineconeIndex } from "@/lib/pinecone";
 import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
 import { OpenAIEmbeddings } from "@langchain/openai";
-import { Pinecone } from "@pinecone-database/pinecone";
 
 import mammoth from "mammoth";
-
-const pinecone = new Pinecone({
-  apiKey: process.env.PINECONE_API_KEY!,
-});
 
 export const processDocument = inngest.createFunction(
   {
@@ -94,9 +90,7 @@ export const processDocument = inngest.createFunction(
 
       // ── Stage 4: INDEXING ─────────────────────────────────────────
       await step.run("index-vectors", async () => {
-        const index = pinecone
-          .index({ name: process.env.PINECONE_INDEX! })
-          .namespace(document.workspaceId);
+        const index = pineconeIndex.namespace(document.workspaceId);
 
         const vectors = embeddings.map((values, i) => ({
           id: `${documentId}-chunk-${i}`,
