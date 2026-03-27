@@ -55,7 +55,7 @@ export default async function ConversationPage({
       <ChatClient
         workspaceId={workspace.id}
         hasDocuments={hasDocuments}
-        conversationId={crypto.randomUUID()}
+        conversationId={conversationId}
         workspaceSlug={workspace.slug}
         initialMessages={initialMessages}
       />

@@ -2,7 +2,7 @@
 
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, UIMessage } from "ai";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { SourceChips, Source } from "./source-chips";
 import { SourcePanel } from "./source-panel";
 import { Send, Square, MessageSquare } from "lucide-react";
@@ -34,11 +34,17 @@ export function ChatClient({
   const pathname = usePathname();
   const hasNavigatedRef = useRef(false);
 
+  const transport = useMemo(
+    () =>
+      new DefaultChatTransport({
+        api: "/api/chat",
+        body: { workspaceId, conversationId },
+      }),
+    [workspaceId, conversationId],
+  );
+
   const { messages, sendMessage, status, stop } = useChat({
-    transport: new DefaultChatTransport({
-      api: "/api/chat",
-      body: { workspaceId, conversationId },
-    }),
+    transport,
     messages: initialMessages,
   });
 
@@ -63,6 +69,7 @@ export function ChatClient({
     ) {
       hasNavigatedRef.current = true;
       router.push(`/${workspaceSlug}/chat/${conversationId}`);
+      router.refresh();
     }
   }, [messages.length, status]);
 
@@ -116,6 +123,7 @@ export function ChatClient({
                 const isUser = message.role === "user";
                 const sources =
                   (message.metadata as { sources?: Source[] })?.sources ?? [];
+
                 // Don't render assistant bubble until it has actual text
                 const textContent = message.parts
                   .filter((p) => p.type === "text")
@@ -264,7 +272,8 @@ export function ChatClient({
                   );
               })
             )}
-
+            {/* {status} {conversationId} */}
+            {/* Typing indicator while waiting for first chunk */}
             <div ref={messagesEndRef} />
           </div>
 
