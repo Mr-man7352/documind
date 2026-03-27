@@ -116,6 +116,11 @@ export const processDocument = inngest.createFunction(
             status: "INDEXED",
           },
         });
+
+        await inngest.send({
+          name: "document.indexed",
+          data: { documentId, workspaceId: document.workspaceId },
+        });
       });
     } catch (error) {
       // If any stage fails after all retries, mark document as ERROR

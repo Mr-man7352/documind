@@ -5,7 +5,7 @@ import { DefaultChatTransport, UIMessage } from "ai";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { SourceChips, Source } from "./source-chips";
 import { SourcePanel } from "./source-panel";
-import { Send, Square, MessageSquare } from "lucide-react";
+import { Send, Square, MessageSquare, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -29,6 +29,7 @@ export function ChatClient({
 }: ChatClientProps) {
   const [selectedSource, setSelectedSource] = useState<Source | null>(null);
   const [selectedIndex, setSelectedIndex] = useState<number>(0);
+  const [suggestions, setSuggestions] = useState<string[]>([]);
 
   const router = useRouter();
   const pathname = usePathname();
@@ -73,6 +74,12 @@ export function ChatClient({
     }
   }, [messages.length, status]);
 
+  useEffect(() => {
+    fetch(`/api/suggestions?workspaceId=${workspaceId}`)
+      .then((r) => r.json())
+      .then((data) => setSuggestions(data.questions ?? []));
+  }, [workspaceId]);
+
   // Auto-grow textarea
   function handleInput() {
     const el = textareaRef.current;
@@ -111,12 +118,36 @@ export function ChatClient({
           {/* ── Message list ── */}
           <div className="flex-1 overflow-y-auto py-4 space-y-4">
             {messages.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground gap-3">
-                <MessageSquare className="h-10 w-10 opacity-30" />
-                <p className="text-sm max-w-xs">
-                  Ask anything about your documents. The AI will search through
-                  them to find the answer.
-                </p>
+              <div className="flex flex-col items-center justify-center h-full text-center gap-6">
+                <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                  <MessageSquare className="h-10 w-10 opacity-30" />
+                  <p className="text-lg font-medium text-foreground">
+                    What would you like to know?
+                  </p>
+                  <p className="text-sm max-w-xs">
+                    Click a suggestion or type your own question below.
+                  </p>
+                </div>
+
+                {suggestions.length > 0 && (
+                  <div className="flex flex-col gap-2 w-full max-w-lg">
+                    {suggestions.map((q, i) => (
+                      <button
+                        key={i}
+                        onClick={() => {
+                          if (textareaRef.current) {
+                            textareaRef.current.value = q;
+                            submit();
+                          }
+                        }}
+                        className="flex items-center justify-between gap-3 rounded-xl border bg-background px-4 py-3 text-sm text-left hover:bg-muted transition-colors"
+                      >
+                        <span>{q}</span>
+                        <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             ) : (
               messages.map((message) => {
