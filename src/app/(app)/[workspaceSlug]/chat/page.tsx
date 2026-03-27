@@ -26,14 +26,20 @@ export default async function ChatPage({
     })) > 0;
 
   return (
-    <div className="flex flex-col h-full -m-8 p-8">
+    <div className="flex flex-col h-full ">
       <div className="mb-4 shrink-0">
         <h1 className="text-2xl font-bold text-gray-900">Chat</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Ask questions about your documents.
+          Ask questions about your documents. Try on
         </p>
       </div>
-      <ChatClient workspaceId={workspace.id} hasDocuments={hasDocuments} />
+      <ChatClient
+        workspaceId={workspace.id}
+        hasDocuments={hasDocuments}
+        conversationId={crypto.randomUUID()}
+        workspaceSlug={workspace.slug}
+        initialMessages={[]}
+      />
     </div>
   );
 }

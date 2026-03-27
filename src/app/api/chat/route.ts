@@ -31,6 +31,7 @@ export async function POST(req: NextRequest) {
   const lastUserMessage = [...messages]
     .reverse()
     .find((m) => m.role === "user");
+
   if (!lastUserMessage) {
     return NextResponse.json(
       { error: "No user message found" },
@@ -44,6 +45,7 @@ export async function POST(req: NextRequest) {
     .map((p) => (p as { type: "text"; text: string }).text)
     .join(" ");
 
+  // console.log("user msg text", lastMessageText);
   const embeddingResponse = await openaiClient.embeddings.create({
     model: "text-embedding-3-small",
     input: lastMessageText,
@@ -109,12 +111,14 @@ ${contextBlock}
             data: {
               id: conversationId,
               workspaceId,
+              userId,
               title: lastMessageText.slice(0, 80),
             },
           });
         }
         // Only save the NEW messages — last user message + this assistant response
 
+        // transaction is not supported in edge runtime, so we do sequential operations with best effort to maintain consistency
         await prisma.message.create({
           data: {
             role: "user",
@@ -139,6 +143,11 @@ ${contextBlock}
               vectorId: c.vectorId,
             })),
           },
+        });
+
+        await prisma.conversation.update({
+          where: { id: conversationId },
+          data: { updatedAt: new Date() },
         });
       } catch (err) {
         console.error("Failed to persist conversation:", err);

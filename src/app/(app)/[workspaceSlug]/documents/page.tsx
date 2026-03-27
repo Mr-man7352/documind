@@ -12,6 +12,7 @@ export default async function DocumentsPage({
   const session = await requireAuth();
 
   // Make sure the workspace exists and this user is a member
+  // console.log("prisma", prisma);
   const workspace = await prisma.workspace.findUnique({
     where: { slug: workspaceSlug },
     include: { memberships: { where: { userId: session.user.id } } },
