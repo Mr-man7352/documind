@@ -91,12 +91,13 @@ ${contextBlock}
 </context>`;
 
   // Stream the response
+  const startTime = Date.now();
   const result = streamText({
     model: openai("gpt-5-nano"), // will use the chepest available gpt-5 model
     system: systemPrompt,
     messages: await convertToModelMessages(messages),
     maxOutputTokens: 1500,
-    onFinish: async ({ text }) => {
+    onFinish: async ({ text, usage }) => {
       // Persist conversation and messages asynchronously (non-blocking)
       try {
         const userId = (session.user as { id: string }).id;
@@ -154,6 +155,8 @@ ${contextBlock}
           data: {
             query: lastMessageText,
             answeredSuccessfully: chunks.some((c) => c.score > 0.5),
+            responseTimeMs: Date.now() - startTime,
+            tokenCount: usage.totalTokens,
             workspaceId,
             userId: (session.user as { id: string }).id,
           },

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { UploadDropzone } from "@/components/documents/upload-dropzone";
 import {
   FileText,
@@ -278,9 +279,20 @@ export function DocumentsClient({
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2 min-w-0">
                         <FileIcon mimeType={doc.fileType} />
-                        <span className="truncate font-medium max-w-[240px]">
-                          {doc.title}
-                        </span>
+                        {doc.status === "INDEXED" ? (
+                          <Link
+                            href={`/api/documents/${doc.id}/view`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="truncate font-medium max-w-[240px] hover:underline text-primary"
+                          >
+                            {doc.title}
+                          </Link>
+                        ) : (
+                          <span className="truncate font-medium max-w-[240px]">
+                            {doc.title}
+                          </span>
+                        )}
                       </div>
                     </td>
                     <td className="px-4 py-3">
