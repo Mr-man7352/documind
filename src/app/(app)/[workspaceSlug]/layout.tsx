@@ -15,7 +15,7 @@ export default async function WorkspaceLayout({
         <h2 className="mb-6 text-lg font-bold px-3">DocuMind</h2>
         <SidebarNav workspaceSlug={workspaceSlug} />
       </aside>
-      <main className="flex-1 p-8">{children}</main>
+      <main className="flex-1 p-8 py-4">{children}</main>
     </div>
   );
 }

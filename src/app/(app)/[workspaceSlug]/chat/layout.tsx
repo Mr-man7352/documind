@@ -24,12 +24,12 @@ export default async function ChatLayout({
   const conversations = await getConversations(workspace.id);
 
   return (
-    <div className="flex h-full -m-8">
+    <div className="flex h-full -mx-2 my-0">
       <ConversationSidebar
         conversations={conversations}
         workspaceSlug={workspaceSlug}
       />
-      <div className="flex-1 overflow-hidden p-8">{children}</div>
+      <div className="flex-1 overflow-hidden p-8 pb-[unset]">{children}</div>
     </div>
   );
 }

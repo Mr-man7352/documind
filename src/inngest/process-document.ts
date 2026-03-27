@@ -58,6 +58,8 @@ export const processDocument = inngest.createFunction(
         return buffer.toString("utf-8");
       });
 
+      console.log("Extracted raw text length:", rawText, "characters");
+
       // ── Stage 2: CHUNKING ─────────────────────────────────────────
       const chunks = await step.run("chunk-document", async () => {
         await prisma.document.update({
@@ -114,6 +116,7 @@ export const processDocument = inngest.createFunction(
           where: { id: documentId },
           data: {
             status: "INDEXED",
+            chunkCount: chunks.length,
           },
         });
 

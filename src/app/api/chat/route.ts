@@ -61,7 +61,7 @@ export async function POST(req: NextRequest) {
   });
 
   const chunks = queryResult.matches
-    .filter((m) => m.score && m.score > 0.3)
+    .filter((m) => m.score && m.score > 0.35)
     .map((m) => ({
       ...(m.metadata as {
         text: string;
@@ -148,6 +148,15 @@ ${contextBlock}
         await prisma.conversation.update({
           where: { id: conversationId },
           data: { updatedAt: new Date() },
+        });
+
+        await prisma.queryLog.create({
+          data: {
+            query: lastMessageText,
+            answeredSuccessfully: chunks.some((c) => c.score > 0.5),
+            workspaceId,
+            userId: (session.user as { id: string }).id,
+          },
         });
       } catch (err) {
         console.error("Failed to persist conversation:", err);
