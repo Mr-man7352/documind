@@ -1,6 +1,7 @@
 import { SidebarNav } from "@/components/layout/sidebar-nav";
 import { MobileSidebar } from "@/components/layout/mobile-sidebar";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { OfflineBanner } from "@/components/layout/offline-banner";
 import Link from "next/link";
 
 export default async function WorkspaceLayout({
@@ -36,6 +37,8 @@ export default async function WorkspaceLayout({
           </div>
           <ThemeToggle />
         </div>
+
+        <OfflineBanner />
 
         {/* Page content */}
         <main className="flex-1 overflow-y-auto p-4 md:p-8 md:py-4">
