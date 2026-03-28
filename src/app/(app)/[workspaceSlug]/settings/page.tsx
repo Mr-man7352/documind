@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth-session";
 import { redirect } from "next/navigation";
 import { TeamSettingsClient } from "./team-settings-client";
+import { ApiKeysClient } from "./api-keys-client";
 
 export default async function SettingsPage({
   params,
@@ -44,6 +45,22 @@ export default async function SettingsPage({
     orderBy: { createdAt: "desc" },
   });
 
+  // Load API keys
+  const apiKeys = await prisma.apiKey.findMany({
+    where: { workspaceId: workspace.id },
+    select: {
+      id: true,
+      name: true,
+      keyPrefix: true,
+      rateLimit: true,
+      lastUsedAt: true,
+      createdAt: true,
+      revokedAt: true,
+      // keyHash intentionally excluded
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
   return (
     <div>
       <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
@@ -69,6 +86,20 @@ export default async function SettingsPage({
           role: inv.role,
           createdAt: inv.createdAt.toISOString(),
           expiresAt: inv.expiresAt.toISOString(),
+        }))}
+      />
+
+      <ApiKeysClient
+        workspaceId={workspace.id}
+        isOwner={membership?.role === "owner"}
+        initialKeys={apiKeys.map((k) => ({
+          id: k.id,
+          name: k.name,
+          keyPrefix: k.keyPrefix,
+          rateLimit: k.rateLimit,
+          lastUsedAt: k.lastUsedAt?.toISOString() ?? null,
+          createdAt: k.createdAt.toISOString(),
+          revokedAt: k.revokedAt?.toISOString() ?? null,
         }))}
       />
     </div>

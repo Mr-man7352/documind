@@ -157,11 +157,14 @@ model QueryLog {
 
 model ApiKey {
   id          String    @id @default(cuid())
-  key         String    @unique
   name        String
+  keyPrefix   String // first 8 chars (e.g. "dk_a1b2c") — safe to display
+  keyHash     String // bcrypt hash of the full key — never show this
   workspaceId String
+  rateLimit   Int       @default(100) // max requests per minute
   lastUsedAt  DateTime?
   createdAt   DateTime  @default(now())
+  revokedAt   DateTime? // null = active, non-null = revoked
 
   workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 }
