@@ -63,8 +63,8 @@ export default async function SettingsPage({
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
-      <p className="mt-1 text-gray-500">
+      <h1 className="text-2xl font-bold text-foreground">Settings</h1>
+      <p className="mt-1 text-muted-foreground">
         Manage workspace members and invitations.
       </p>
 

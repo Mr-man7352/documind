@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Menu, X } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { SidebarNav } from "./sidebar-nav";
+import Link from "next/link";
 
 interface MobileSidebarProps {
   workspaceSlug: string;
@@ -44,7 +45,9 @@ export function MobileSidebar({ workspaceSlug }: MobileSidebarProps) {
         }`}
       >
         <div className="flex items-center justify-between mb-6 px-3">
-          <span className="text-lg font-bold">DocuMind</span>
+          <span className="text-lg font-bold">
+            <Link href="/">DocuMind</Link>
+          </span>
           <button
             onClick={() => setIsOpen(false)}
             className="p-1 rounded-md text-gray-500 hover:bg-gray-100 transition-colors"

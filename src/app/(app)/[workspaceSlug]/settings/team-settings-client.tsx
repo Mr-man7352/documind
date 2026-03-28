@@ -116,7 +116,7 @@ export function TeamSettingsClient({
       {/* ── Invite Form ── */}
       {canInvite && (
         <section>
-          <h2 className="text-lg font-semibold text-gray-800 mb-4">
+          <h2 className="text-lg font-semibold text-foreground mb-4">
             Invite a team member
           </h2>
           <form
@@ -124,22 +124,22 @@ export function TeamSettingsClient({
             className="flex gap-3 items-end flex-wrap"
           >
             <div className="flex flex-col gap-1">
-              <label className="text-sm text-gray-600">Email address</label>
+              <label className="text-sm text-muted-foreground">Email address</label>
               <input
                 type="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="colleague@example.com"
-                className="border border-gray-300 rounded-md px-3 py-2 text-sm w-64 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="border border-input rounded-md px-3 py-2 text-sm w-64 focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
             </div>
             <div className="flex flex-col gap-1">
-              <label className="text-sm text-gray-600">Role</label>
+              <label className="text-sm text-muted-foreground">Role</label>
               <select
                 value={role}
                 onChange={(e) => setRole(e.target.value as "member" | "viewer")}
-                className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="border border-input rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
               >
                 <option value="member">Member</option>
                 <option value="viewer">Viewer</option>
@@ -158,10 +158,10 @@ export function TeamSettingsClient({
 
       {/* ── Current Members ── */}
       <section>
-        <h2 className="text-lg font-semibold text-gray-800 mb-4">
+        <h2 className="text-lg font-semibold text-foreground mb-4">
           Team members ({members.length})
         </h2>
-        <div className="border border-gray-200 rounded-lg overflow-hidden">
+        <div className="border border-border rounded-lg overflow-hidden">
           {members.map((member) => {
             const isSelf = member.id === currentUserId;
             const callerLevel = ROLE_HIERARCHY[currentUserRole] ?? 0;
@@ -183,7 +183,7 @@ export function TeamSettingsClient({
             return (
               <div
                 key={member.id}
-                className="flex items-center justify-between px-4 py-3 border-b border-gray-100 last:border-0"
+                className="flex items-center justify-between px-4 py-3 border-b border-border last:border-0"
               >
                 {/* Avatar + name */}
                 <div className="flex items-center gap-3">
@@ -201,10 +201,10 @@ export function TeamSettingsClient({
                     </div>
                   )}
                   <div>
-                    <p className="text-sm font-medium text-gray-900">
+                    <p className="text-sm font-medium text-foreground">
                       {member.name} {isSelf && "(you)"}
                     </p>
-                    <p className="text-xs text-gray-500">{member.email}</p>
+                    <p className="text-xs text-muted-foreground">{member.email}</p>
                   </div>
                 </div>
 
@@ -214,7 +214,7 @@ export function TeamSettingsClient({
                     <select
                       value={member.role}
                       onChange={(e) => handleChangeRole(member, e.target.value)}
-                      className="border border-gray-300 rounded-md px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      className="border border-input rounded-md px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     >
                       {VALID_ROLES.filter(
                         (r) => ROLE_HIERARCHY[r] < callerLevel,
@@ -246,20 +246,20 @@ export function TeamSettingsClient({
       {/* ── Pending Invitations ── */}
       {invitations.length > 0 && (
         <section>
-          <h2 className="text-lg font-semibold text-gray-800 mb-4">
+          <h2 className="text-lg font-semibold text-foreground mb-4">
             Pending invitations ({invitations.length})
           </h2>
-          <div className="border border-gray-200 rounded-lg overflow-hidden">
+          <div className="border border-border rounded-lg overflow-hidden">
             {invitations.map((inv) => (
               <div
                 key={inv.id}
-                className="flex items-center justify-between px-4 py-3 border-b border-gray-100 last:border-0"
+                className="flex items-center justify-between px-4 py-3 border-b border-border last:border-0"
               >
                 <div>
-                  <p className="text-sm font-medium text-gray-900">
+                  <p className="text-sm font-medium text-foreground">
                     {inv.email}
                   </p>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-muted-foreground">
                     Expires{" "}
                     {new Date(inv.expiresAt).toLocaleDateString("en-GB", {
                       day: "numeric",
@@ -291,11 +291,11 @@ export function TeamSettingsClient({
       {/* ── Confirm Remove Dialog ── */}
       {confirmRemove && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-sm mx-4">
-            <h3 className="text-base font-semibold text-gray-900 mb-2">
+          <div className="bg-card rounded-xl shadow-xl p-6 w-full max-w-sm mx-4">
+            <h3 className="text-base font-semibold text-foreground mb-2">
               Remove member?
             </h3>
-            <p className="text-sm text-gray-600 mb-6">
+            <p className="text-sm text-muted-foreground mb-6">
               This will remove{" "}
               <span className="font-medium">{confirmRemove.name}</span> from the
               workspace. They will lose access immediately.
@@ -303,7 +303,7 @@ export function TeamSettingsClient({
             <div className="flex justify-end gap-3">
               <button
                 onClick={() => setConfirmRemove(null)}
-                className="px-4 py-2 text-sm rounded-md border border-gray-300 hover:bg-gray-50 transition-colors"
+                className="px-4 py-2 text-sm rounded-md border border-input hover:bg-muted transition-colors"
               >
                 Cancel
               </button>

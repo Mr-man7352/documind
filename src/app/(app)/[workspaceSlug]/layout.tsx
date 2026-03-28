@@ -1,5 +1,7 @@
 import { SidebarNav } from "@/components/layout/sidebar-nav";
 import { MobileSidebar } from "@/components/layout/mobile-sidebar";
+import { ThemeToggle } from "@/components/theme-toggle";
+import Link from "next/link";
 
 export default async function WorkspaceLayout({
   children,
@@ -12,17 +14,27 @@ export default async function WorkspaceLayout({
 
   return (
     <div className="flex h-screen">
-      {/* Desktop sidebar — hidden on mobile */}
+      {/* Desktop sidebar */}
       <aside className="hidden md:flex w-64 border-r bg-sidebar p-4 flex-col">
-        <h2 className="mb-6 text-lg font-bold px-3">DocuMind</h2>
+        <div className="mb-6 flex items-center justify-between px-3">
+          <h2 className="text-lg font-bold">
+            <Link href="/">DocuMind</Link>
+          </h2>
+          <ThemeToggle />
+        </div>
         <SidebarNav workspaceSlug={workspaceSlug} />
       </aside>
 
       <div className="flex flex-1 flex-col overflow-hidden">
-        {/* Mobile top bar — only visible below md breakpoint */}
-        <div className="flex items-center gap-3 border-b bg-sidebar px-4 py-3 md:hidden">
-          <MobileSidebar workspaceSlug={workspaceSlug} />
-          <span className="text-sm font-semibold">DocuMind</span>
+        {/* Mobile top bar */}
+        <div className="flex items-center justify-between border-b bg-sidebar px-4 py-3 md:hidden">
+          <div className="flex items-center gap-3">
+            <MobileSidebar workspaceSlug={workspaceSlug} />
+            <span className="text-sm font-semibold">
+              <Link href="/">DocuMind</Link>
+            </span>
+          </div>
+          <ThemeToggle />
         </div>
 
         {/* Page content */}
