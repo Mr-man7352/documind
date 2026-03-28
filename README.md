@@ -38,3 +38,8 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 ```bash
 npx inngest-cli@latest dev -u http://localhost:3000/api/webhooks/inngest
 ```
+
+And the script tag any website owner needs is just:
+html<script src="https://documind-lac.vercel.app/widget.js" data-key="dk_..."></script>
+
+Where `data-key` is the API key they get when they create a widget in our dashboard. The widget then makes requests to our API with that key to fetch config and chat responses.

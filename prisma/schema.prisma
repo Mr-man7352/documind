@@ -156,15 +156,18 @@ model QueryLog {
 }
 
 model ApiKey {
-  id          String    @id @default(cuid())
-  name        String
-  keyPrefix   String // first 8 chars (e.g. "dk_a1b2c") — safe to display
-  keyHash     String // bcrypt hash of the full key — never show this
-  workspaceId String
-  rateLimit   Int       @default(100) // max requests per minute
-  lastUsedAt  DateTime?
-  createdAt   DateTime  @default(now())
-  revokedAt   DateTime? // null = active, non-null = revoked
+  id                 String    @id @default(cuid())
+  name               String
+  keyPrefix          String // first 8 chars (e.g. "dk_a1b2c") — safe to display
+  keyHash            String // bcrypt hash of the full key — never show this
+  workspaceId        String
+  rateLimit          Int       @default(100) // max requests per minute
+  lastUsedAt         DateTime?
+  createdAt          DateTime  @default(now())
+  revokedAt          DateTime? // null = active, non-null = revoked
+  primaryColor       String    @default("#6366f1")
+  welcomeMessage     String    @default("Hi! Ask me anything about our docs.")
+  suggestedQuestions Json      @default("[]")
 
   workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 }

@@ -24,6 +24,7 @@ function isPublicPath(pathname: string) {
   return (
     pathname === "/" ||
     pathname === "/login" ||
+    pathname === "/widget.js" ||
     pathname.startsWith("/callback") ||
     pathname.startsWith("/api/auth") ||
     pathname.startsWith("/api/widget") ||
