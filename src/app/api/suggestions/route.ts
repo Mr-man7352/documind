@@ -30,6 +30,23 @@ export async function GET(req: NextRequest) {
     );
   }
 
+  // Verify user is a member of this workspace
+  const membership = await prisma.membership.findUnique({
+    where: {
+      userId_workspaceId: {
+        userId: session.user.id,
+        workspaceId,
+      },
+    },
+  });
+
+  if (!membership) {
+    return NextResponse.json(
+      { error: "You are not a member of this workspace." },
+      { status: 403 },
+    );
+  }
+
   // 1. Cache hit → return immediately
   const cached = await redis.get<string[]>(suggestionsKey(workspaceId));
   if (cached) {

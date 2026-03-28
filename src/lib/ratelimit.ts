@@ -13,3 +13,11 @@ export const widgetRatelimit = new Ratelimit({
   analytics: true, // tracks usage in Upstash dashboard
   prefix: "documind:widget",
 });
+
+// Sliding window: 30 requests per 60 seconds, keyed by userId
+export const chatRatelimit = new Ratelimit({
+  redis,
+  limiter: Ratelimit.slidingWindow(30, "60 s"),
+  analytics: true,
+  prefix: "documind:chat",
+});

@@ -21,6 +21,23 @@ export async function GET(
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
+  // Verify user is a member of the document's workspace
+  const membership = await prisma.membership.findUnique({
+    where: {
+      userId_workspaceId: {
+        userId: session.user.id,
+        workspaceId: document.workspaceId,
+      },
+    },
+  });
+
+  if (!membership) {
+    return NextResponse.json(
+      { error: "You are not a member of this workspace." },
+      { status: 403 },
+    );
+  }
+
   // Fetch the private blob server-side using the token
   const blobResponse = await fetch(document.fileUrl, {
     headers: {

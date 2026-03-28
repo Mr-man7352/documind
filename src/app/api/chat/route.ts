@@ -4,6 +4,7 @@ import { openaiClient } from "@/lib/openai";
 import { pineconeIndex } from "@/lib/pinecone";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth-session";
+import { chatRatelimit } from "@/lib/ratelimit";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
@@ -11,6 +12,15 @@ export async function POST(req: NextRequest) {
 
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  // Rate limit: 30 requests per 60 seconds per user
+  const { success } = await chatRatelimit.limit(session.user.id);
+  if (!success) {
+    return NextResponse.json(
+      { error: "Too many requests — please slow down." },
+      { status: 429 },
+    );
   }
 
   const {
@@ -25,6 +35,37 @@ export async function POST(req: NextRequest) {
       { error: "workspaceId is required" },
       { status: 400 },
     );
+  }
+
+  // Verify user is a member of this workspace
+  const membership = await prisma.membership.findUnique({
+    where: {
+      userId_workspaceId: {
+        userId: session.user.id,
+        workspaceId,
+      },
+    },
+  });
+
+  if (!membership) {
+    return NextResponse.json(
+      { error: "You are not a member of this workspace." },
+      { status: 403 },
+    );
+  }
+
+  // Verify conversation ownership (if resuming an existing conversation)
+  if (conversationId) {
+    const existingConversation = await prisma.conversation.findUnique({
+      where: { id: conversationId },
+    });
+
+    if (existingConversation && (existingConversation.userId !== session.user.id || existingConversation.workspaceId !== workspaceId)) {
+      return NextResponse.json(
+        { error: "You do not have access to this conversation." },
+        { status: 403 },
+      );
+    }
   }
 
   // Embed the last user message
@@ -106,6 +147,12 @@ ${contextBlock}
         const existing = await prisma.conversation.findUnique({
           where: { id: conversationId },
         });
+
+        // Verify conversation belongs to this user and workspace
+        if (existing && (existing.userId !== userId || existing.workspaceId !== workspaceId)) {
+          console.error("Conversation ownership mismatch");
+          return;
+        }
 
         if (!existing) {
           await prisma.conversation.create({
