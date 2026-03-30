@@ -20,7 +20,6 @@ export async function OPTIONS() {
 export async function POST(req: NextRequest) {
   // ── 1. Validate API key ──────────────────────────────────────
   const rawKey = req.headers.get("X-API-Key");
-  // console.log("Received API key:", rawKey);
 
   if (!rawKey) {
     return NextResponse.json(
@@ -104,7 +103,6 @@ export async function POST(req: NextRequest) {
       score: m.score ?? 0,
     }));
 
-  console.log("Filtered chunks:", chunks[0]);
   const contextBlock =
     chunks.length > 0
       ? chunks
@@ -128,26 +126,6 @@ ${contextBlock}
       data: { lastUsedAt: new Date() },
     })
     .catch(() => {});
-
-  // const result = streamText({
-  //   model: openai("gpt-5-nano"),
-  //   system: systemPrompt,
-  //   messages, // simple { role, content }[] works directly with streamText
-  //   maxOutputTokens: 1000,
-  // });
-
-  // // toTextStreamResponse streams plain text tokens — easy to read in vanilla JS
-  // const response = result.toTextStreamResponse();
-
-  // // Attach CORS + sources as a header so the widget can display citations
-  // const sourcesHeader = JSON.stringify(
-  //   chunks.map((c) => ({ title: c.title, documentId: c.documentId })),
-  // );
-
-  // response.headers.set("Access-Control-Allow-Origin", "*");
-  // response.headers.set("X-Sources", sourcesHeader);
-
-  // return response;
 
   const sourcesHeader = JSON.stringify(
     chunks.map((c) => ({ title: c.title, documentId: c.documentId })),

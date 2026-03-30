@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { put } from "@vercel/blob";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { getSession } from "@/lib/auth-session";
 import { prisma } from "@/lib/prisma";
 import { inngest } from "@/lib/inngest";
+
+const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB
 
 const ACCEPTED_MIME = [
   "application/pdf",
@@ -15,7 +16,7 @@ const ACCEPTED_MIME = [
 
 export async function POST(req: NextRequest) {
   // 1. Auth check
-  const session = await getServerSession(authOptions);
+  const session = await getSession();
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -39,7 +40,7 @@ export async function POST(req: NextRequest) {
       { status: 400 },
     );
   }
-  if (file.size > 10 * 1024 * 1024) {
+  if (file.size > MAX_FILE_SIZE_BYTES) {
     return NextResponse.json(
       { error: "File too large (max 10 MB)" },
       { status: 400 },

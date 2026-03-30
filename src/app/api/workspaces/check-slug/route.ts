@@ -1,10 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth-session";
-
-function isValidSlug(slug: string): boolean {
-  return /^[a-z0-9][a-z0-9-]{1,38}[a-z0-9]$/.test(slug);
-}
+import { isValidSlug } from "@/lib/utils";
 
 export async function GET(req: NextRequest) {
   const session = await getSession();

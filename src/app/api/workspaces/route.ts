@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth-session";
 import { prisma } from "@/lib/prisma";
+import { isValidSlug } from "@/lib/utils";
 
 export async function POST(req: NextRequest) {
   const session = await getSession();
@@ -33,11 +34,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  if (
-    !slug ||
-    typeof slug !== "string" ||
-    !/^[a-z0-9][a-z0-9-]{1,38}[a-z0-9]$/.test(slug)
-  ) {
+  if (!slug || typeof slug !== "string" || !isValidSlug(slug)) {
     return NextResponse.json(
       { error: "Invalid workspace URL format" },
       { status: 400 },

@@ -86,7 +86,6 @@ export async function POST(req: NextRequest) {
     .map((p) => (p as { type: "text"; text: string }).text)
     .join(" ");
 
-  // console.log("user msg text", lastMessageText);
   const embeddingResponse = await openaiClient.embeddings.create({
     model: "text-embedding-3-small",
     input: lastMessageText,
@@ -134,14 +133,14 @@ ${contextBlock}
   // Stream the response
   const startTime = Date.now();
   const result = streamText({
-    model: openai("gpt-5-nano"), // will use the chepest available gpt-5 model
+    model: openai("gpt-5-nano"), // will use the cheapest available gpt-5 model
     system: systemPrompt,
     messages: await convertToModelMessages(messages),
     maxOutputTokens: 1500,
     onFinish: async ({ text, usage }) => {
       // Persist conversation and messages asynchronously (non-blocking)
       try {
-        const userId = (session.user as { id: string }).id;
+        const userId = session.user.id;
 
         // Manual find-or-create (upsert uses transactions, not supported in HTTP mode)
         const existing = await prisma.conversation.findUnique({
@@ -205,7 +204,7 @@ ${contextBlock}
             responseTimeMs: Date.now() - startTime,
             tokenCount: usage.totalTokens,
             workspaceId,
-            userId: (session.user as { id: string }).id,
+            userId: session.user.id,
           },
         });
       } catch (err) {
