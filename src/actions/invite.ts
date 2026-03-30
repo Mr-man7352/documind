@@ -166,6 +166,7 @@ async function sendInviteEmail({
       inviterName,
       inviteUrl,
       role,
+      expiresInDays: INVITE_EXPIRY_MS / (24 * 60 * 60 * 1000),
     }),
   });
 

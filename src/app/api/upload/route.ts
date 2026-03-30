@@ -3,16 +3,9 @@ import { put } from "@vercel/blob";
 import { getSession } from "@/lib/auth-session";
 import { prisma } from "@/lib/prisma";
 import { inngest } from "@/lib/inngest";
+import { ACCEPTED_MIME } from "@/lib/utils";
 
 const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB
-
-const ACCEPTED_MIME = [
-  "application/pdf",
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-  "text/plain",
-  "text/markdown",
-  "text/csv",
-];
 
 export async function POST(req: NextRequest) {
   // 1. Auth check

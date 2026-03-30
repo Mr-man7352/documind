@@ -2,16 +2,9 @@
 
 import { useCallback, useState } from "react";
 import { UploadCloud, CheckCircle2, AlertCircle } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, ACCEPTED_MIME } from "@/lib/utils";
 
 const ACCEPTED_TYPES = [".pdf", ".docx", ".txt", ".md", ".csv"];
-const ACCEPTED_MIME = [
-  "application/pdf",
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-  "text/plain",
-  "text/markdown",
-  "text/csv",
-];
 const MAX_SIZE_MB = 10;
 const MAX_FILES = 5;
 
@@ -52,8 +45,8 @@ function uploadFile(
       if (xhr.status === 200) {
         resolve();
       } else {
-        const body = JSON.parse(xhr.responseText || "{}");
-        reject(new Error(body.error || "Upload failed"));
+        const responseBody = JSON.parse(xhr.responseText || "{}");
+        reject(new Error(responseBody.error || "Upload failed"));
       }
     };
 
