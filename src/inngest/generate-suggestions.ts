@@ -21,22 +21,24 @@ export const generateSuggestions = inngest.createFunction(
     const questions = await step.run("generate-via-llm", async () => {
       // Grab up to 10 document titles from this workspace
       const documents = await prisma.document.findMany({
+        select: { title: true, summary: true },
         where: { workspaceId, status: "INDEXED" },
-        select: { title: true },
-        take: 10,
+        orderBy: { createdAt: "desc" },
+        take: 3,
       });
 
-      const titles = documents.map((d) => d.title).join("\n");
+      const context = documents
+        .map((d) => `Title: ${d.title}\nSummary: ${d.summary ?? "N/A"}`)
+        .join("\n\n");
 
       const response = await openaiClient.chat.completions.create({
         model: "gpt-5-nano",
         messages: [
           {
             role: "user",
-            content: `Based on these document titles, generate 3-5 specific questions a team member might ask. Return as a JSON object with a "questions" key containing an array of strings.\n\nDocuments:\n${titles}`,
+            content: `Based on these documents, generate upto 4 specific questions a team member might ask. Return as a JSON object with a "questions" key containing an array of strings.\n\nDocuments:\n${context}`,
           },
         ],
-        response_format: { type: "json_object" },
       });
 
       const raw = response.choices[0].message.content ?? "{}";

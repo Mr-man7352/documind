@@ -6,9 +6,9 @@ import { OpenAIEmbeddings } from "@langchain/openai";
 
 import mammoth from "mammoth";
 
-const CHUNK_SIZE = 1000;      // characters per chunk
-const CHUNK_OVERLAP = 200;    // overlap between chunks for context continuity
-const BATCH_SIZE = 100;       // max vectors per Pinecone upsert call
+const CHUNK_SIZE = 1000; // characters per chunk
+const CHUNK_OVERLAP = 200; // overlap between chunks for context continuity
+const BATCH_SIZE = 100; // max vectors per Pinecone upsert call
 
 export const processDocument = inngest.createFunction(
   {
@@ -51,16 +51,16 @@ export const processDocument = inngest.createFunction(
           // top level on import, which breaks in Next.js. Lazy require avoids it.
           const pdfParse = require("pdf-parse/lib/pdf-parse.js");
           const result = await pdfParse(buffer);
-          return result.text;
+          return { text: result.text, pageCount: result.numpages as number };
         }
 
         if (document.fileType.includes("wordprocessingml")) {
           const result = await mammoth.extractRawText({ buffer });
-          return result.value;
+          return { text: result.value, pageCount: null };
         }
 
         // TXT, MD, CSV — plain text
-        return buffer.toString("utf-8");
+        return { text: buffer.toString("utf-8"), pageCount: null };
       });
 
       // ── Stage 2: CHUNKING ─────────────────────────────────────────
@@ -75,7 +75,7 @@ export const processDocument = inngest.createFunction(
           chunkOverlap: CHUNK_OVERLAP,
         });
 
-        return splitter.splitText(rawText);
+        return splitter.splitText(rawText.text);
       });
 
       // ── Stage 3: EMBEDDING ────────────────────────────────────────
@@ -119,12 +119,38 @@ export const processDocument = inngest.createFunction(
           data: {
             status: "INDEXED",
             chunkCount: chunks.length,
+            tokenCount: Math.ceil(rawText.text.length / 4),
+            pageCount: rawText.pageCount,
           },
         });
 
         await inngest.send({
           name: "document.indexed",
           data: { documentId, workspaceId: document.workspaceId },
+        });
+      });
+
+      // ── Stage 5: SUMMARIZING ──────────────────────────────────────
+      await step.run("summarize-document", async () => {
+        const { openaiClient } = await import("@/lib/openai");
+
+        const excerpt = rawText.text.slice(0, 3000);
+
+        const response = await openaiClient.chat.completions.create({
+          model: "gpt-4o-mini",
+          messages: [
+            {
+              role: "user",
+              content: `Summarize the following document in 2-3 sentences. Be specific about what it covers.\n\n${excerpt}`,
+            },
+          ],
+        });
+
+        const summary = response.choices[0].message.content ?? null;
+
+        await prisma.document.update({
+          where: { id: documentId },
+          data: { summary },
         });
       });
     } catch (error) {

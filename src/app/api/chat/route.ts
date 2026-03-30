@@ -60,7 +60,11 @@ export async function POST(req: NextRequest) {
       where: { id: conversationId },
     });
 
-    if (existingConversation && (existingConversation.userId !== session.user.id || existingConversation.workspaceId !== workspaceId)) {
+    if (
+      existingConversation &&
+      (existingConversation.userId !== session.user.id ||
+        existingConversation.workspaceId !== workspaceId)
+    ) {
       return NextResponse.json(
         { error: "You do not have access to this conversation." },
         { status: 403 },
@@ -96,7 +100,7 @@ export async function POST(req: NextRequest) {
   const index = pineconeIndex.namespace(workspaceId);
   const queryResult = await index.query({
     vector: queryEmbedding,
-    topK: 5,
+    topK: 3,
     includeMetadata: true,
   });
 
@@ -148,7 +152,10 @@ ${contextBlock}
         });
 
         // Verify conversation belongs to this user and workspace
-        if (existing && (existing.userId !== userId || existing.workspaceId !== workspaceId)) {
+        if (
+          existing &&
+          (existing.userId !== userId || existing.workspaceId !== workspaceId)
+        ) {
           console.error("Conversation ownership mismatch");
           return;
         }

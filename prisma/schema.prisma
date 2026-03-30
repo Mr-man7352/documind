@@ -109,6 +109,7 @@ model Document {
   chunkCount   Int?     @default(0)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+  summary      String?  @db.Text
 
   workspace  Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   uploadedBy User?     @relation(fields: [uploadedById], references: [id])

@@ -5,7 +5,7 @@ import { UploadCloud, CheckCircle2, AlertCircle } from "lucide-react";
 import { cn, ACCEPTED_MIME } from "@/lib/utils";
 
 const ACCEPTED_TYPES = [".pdf", ".docx", ".txt", ".md", ".csv"];
-const MAX_SIZE_MB = 10;
+const MAX_SIZE_MB = 5;
 const MAX_FILES = 5;
 
 interface FileState {
