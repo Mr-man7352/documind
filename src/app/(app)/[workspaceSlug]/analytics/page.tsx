@@ -2,7 +2,6 @@ import { requireAuth } from "@/lib/auth-session";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { AnalyticsClient } from "./analytics-client";
-import { QueryChart } from "./query-chart";
 import { UnansweredTable } from "./unanswered-table";
 import { DateRangeFilter } from "./date-range-filter";
 import Link from "next/link";

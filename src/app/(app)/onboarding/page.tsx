@@ -57,6 +57,10 @@ export default function OnboardingPage() {
         setSlugStatus("idle");
       }
     }, 500);
+
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
   }, [slug]);
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -90,7 +94,7 @@ export default function OnboardingPage() {
         return;
       }
 
-      // ✅ Don't redirect yet — move to step 2
+      // Workspace created — move to step 2 before redirecting
       setCreatedSlug(data.slug);
       setStep(2);
     } catch {

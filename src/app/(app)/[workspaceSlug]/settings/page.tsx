@@ -29,8 +29,10 @@ export default async function SettingsPage({
     },
   });
 
+  if (!membership) redirect("/onboarding");
+
   const canInvite =
-    membership?.role === "owner" || membership?.role === "admin";
+    membership.role === "owner" || membership.role === "admin";
 
   // Load current members
   const members = await prisma.membership.findMany({
@@ -72,7 +74,7 @@ export default async function SettingsPage({
         workspaceId={workspace.id}
         canInvite={canInvite}
         currentUserId={session.user.id}
-        currentUserRole={membership?.role ?? "member"}
+        currentUserRole={membership.role}
         members={members.map((m) => ({
           id: m.id,
           name: m.user.name ?? "Unknown",
@@ -91,7 +93,7 @@ export default async function SettingsPage({
 
       <ApiKeysClient
         workspaceId={workspace.id}
-        isOwner={membership?.role === "owner"}
+        isOwner={membership.role === "owner"}
         initialKeys={apiKeys.map((k) => ({
           id: k.id,
           name: k.name,

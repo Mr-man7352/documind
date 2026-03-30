@@ -23,15 +23,17 @@ export default async function InvitePage({
     );
   }
 
-  // 3. Expired
+  // 3. Expired — update status only if it hasn't been marked yet
   const isExpired =
     invitation.status === "EXPIRED" || invitation.expiresAt < new Date();
 
   if (isExpired) {
-    await prisma.invitation.update({
-      where: { id: invitation.id },
-      data: { status: "EXPIRED" },
-    });
+    if (invitation.status !== "EXPIRED") {
+      await prisma.invitation.update({
+        where: { id: invitation.id },
+        data: { status: "EXPIRED" },
+      });
+    }
     return (
       <InviteError message="This invitation has expired. Please ask the workspace owner to send a new one." />
     );
