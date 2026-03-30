@@ -51,7 +51,8 @@ export function TeamSettingsClient({
   const [confirmRemove, setConfirmRemove] = useState<Member | null>(null);
 
   const canManageRoles =
-    ROLE_HIERARCHY[currentUserRole] >= ROLE_HIERARCHY["admin"];
+    ROLE_HIERARCHY[currentUserRole as keyof typeof ROLE_HIERARCHY] >=
+    ROLE_HIERARCHY["admin"];
 
   function showToast(message: string, type: "success" | "error") {
     setToast({ message, type });
@@ -124,7 +125,9 @@ export function TeamSettingsClient({
             className="flex gap-3 items-end flex-wrap"
           >
             <div className="flex flex-col gap-1">
-              <label className="text-sm text-muted-foreground">Email address</label>
+              <label className="text-sm text-muted-foreground">
+                Email address
+              </label>
               <input
                 type="email"
                 required
@@ -164,8 +167,11 @@ export function TeamSettingsClient({
         <div className="border border-border rounded-lg overflow-hidden">
           {members.map((member) => {
             const isSelf = member.id === currentUserId;
-            const callerLevel = ROLE_HIERARCHY[currentUserRole] ?? 0;
-            const targetLevel = ROLE_HIERARCHY[member.role] ?? 0;
+            const callerLevel =
+              ROLE_HIERARCHY[currentUserRole as keyof typeof ROLE_HIERARCHY] ??
+              0;
+            const targetLevel =
+              ROLE_HIERARCHY[member.role as keyof typeof ROLE_HIERARCHY] ?? 0;
             // You can only manage someone at a lower level than you
             const canManageThisMember =
               canManageRoles && callerLevel > targetLevel;
@@ -204,7 +210,9 @@ export function TeamSettingsClient({
                     <p className="text-sm font-medium text-foreground">
                       {member.name} {isSelf && "(you)"}
                     </p>
-                    <p className="text-xs text-muted-foreground">{member.email}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {member.email}
+                    </p>
                   </div>
                 </div>
 

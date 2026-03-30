@@ -99,9 +99,15 @@ export function DocumentsClient({
   const router = useRouter();
 
   // ── Permissions (derived from role hierarchy) ──
-  const canUpload = ROLE_HIERARCHY[userRole] >= ROLE_HIERARCHY["member"];
-  const canDelete = ROLE_HIERARCHY[userRole] >= ROLE_HIERARCHY["admin"];
-  const canReprocess = ROLE_HIERARCHY[userRole] >= ROLE_HIERARCHY["member"];
+  const canUpload =
+    ROLE_HIERARCHY[userRole as keyof typeof ROLE_HIERARCHY] >=
+    ROLE_HIERARCHY["member"];
+  const canDelete =
+    ROLE_HIERARCHY[userRole as keyof typeof ROLE_HIERARCHY] >=
+    ROLE_HIERARCHY["admin"];
+  const canReprocess =
+    ROLE_HIERARCHY[userRole as keyof typeof ROLE_HIERARCHY] >=
+    ROLE_HIERARCHY["member"];
 
   // ── Local document list (used for optimistic updates) ──
   const [documents, setDocuments] = useState<Document[]>(initialDocuments);
