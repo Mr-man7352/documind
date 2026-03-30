@@ -16,7 +16,6 @@ export const expireInvitations = inngest.createFunction(
       data: { status: "EXPIRED" },
     });
 
-    console.log(`Expired ${result.count} stale invitations.`);
     return { expired: result.count };
   },
 );

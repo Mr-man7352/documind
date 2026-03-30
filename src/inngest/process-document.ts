@@ -6,6 +6,10 @@ import { OpenAIEmbeddings } from "@langchain/openai";
 
 import mammoth from "mammoth";
 
+const CHUNK_SIZE = 1000;      // characters per chunk
+const CHUNK_OVERLAP = 200;    // overlap between chunks for context continuity
+const BATCH_SIZE = 100;       // max vectors per Pinecone upsert call
+
 export const processDocument = inngest.createFunction(
   {
     id: "process-document",
@@ -41,9 +45,10 @@ export const processDocument = inngest.createFunction(
         }
 
         const buffer = Buffer.from(await response.arrayBuffer());
-        console.log("Fetched buffer size:", buffer.length, "bytes");
 
         if (document.fileType === "application/pdf") {
+          // require() instead of import — pdf-parse runs a test file at the
+          // top level on import, which breaks in Next.js. Lazy require avoids it.
           const pdfParse = require("pdf-parse/lib/pdf-parse.js");
           const result = await pdfParse(buffer);
           return result.text;
@@ -58,8 +63,6 @@ export const processDocument = inngest.createFunction(
         return buffer.toString("utf-8");
       });
 
-      console.log("Extracted raw text length:", rawText, "characters");
-
       // ── Stage 2: CHUNKING ─────────────────────────────────────────
       const chunks = await step.run("chunk-document", async () => {
         await prisma.document.update({
@@ -68,8 +71,8 @@ export const processDocument = inngest.createFunction(
         });
 
         const splitter = new RecursiveCharacterTextSplitter({
-          chunkSize: 1000,
-          chunkOverlap: 200,
+          chunkSize: CHUNK_SIZE,
+          chunkOverlap: CHUNK_OVERLAP,
         });
 
         return splitter.splitText(rawText);
@@ -106,8 +109,7 @@ export const processDocument = inngest.createFunction(
           },
         }));
 
-        // Upsert in batches of 100 (Pinecone limit)
-        const BATCH_SIZE = 100;
+        // Upsert in batches (Pinecone limit per call)
         for (let i = 0; i < vectors.length; i += BATCH_SIZE) {
           await index.upsert({ records: vectors.slice(i, i + BATCH_SIZE) });
         }
