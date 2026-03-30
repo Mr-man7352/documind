@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { inngest } from "@/lib/inngest";
 import { ACCEPTED_MIME } from "@/lib/utils";
 
-const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB
+const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
 
 export async function POST(req: NextRequest) {
   // 1. Auth check
@@ -64,7 +64,7 @@ export async function POST(req: NextRequest) {
   const docCount = await prisma.document.count({
     where: { workspaceId: workspace.id },
   });
-  if (docCount >= 50) {
+  if (docCount >= 10) {
     return NextResponse.json(
       { error: "Document limit reached. Please upgrade." },
       { status: 403 },

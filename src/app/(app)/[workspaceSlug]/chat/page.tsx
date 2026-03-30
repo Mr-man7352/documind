@@ -20,11 +20,11 @@ export default async function ChatPage({
 
   if (!workspace || workspace.memberships.length === 0) notFound();
 
-  const hasDocuments =
-    (await prisma.document.count({
-      where: { workspaceId: workspace.id, status: "INDEXED" },
-    })) > 0;
-
+  const documents = await prisma.document.findMany({
+    where: { workspaceId: workspace.id, status: "INDEXED" },
+    select: { id: true, title: true },
+    orderBy: { createdAt: "desc" },
+  });
   return (
     <div className="flex flex-col h-full">
       <div className="mb-4 shrink-0">
@@ -35,7 +35,8 @@ export default async function ChatPage({
       </div>
       <ChatClient
         workspaceId={workspace.id}
-        hasDocuments={hasDocuments}
+        hasDocuments={documents.length > 0}
+        documents={documents}
         conversationId={crypto.randomUUID()}
         workspaceSlug={workspace.slug}
         initialMessages={[]}

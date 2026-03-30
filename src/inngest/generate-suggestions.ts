@@ -36,9 +36,12 @@ export const generateSuggestions = inngest.createFunction(
         messages: [
           {
             role: "user",
-            content: `Based on these documents, generate upto 4 specific questions a team member might ask. Return as a JSON object with a "questions" key containing an array of strings.\n\nDocuments:\n${context}`,
+            content: `Based on these documents, generate upto 4 specific questions a team member might ask. Questions should be short declarative phrases that would appear in a document. Return as a JSON object with a "questions" key containing an array of strings.\n\nDocuments:\n${context}`,
           },
         ],
+        response_format: {
+          type: "json_object",
+        },
       });
 
       const raw = response.choices[0].message.content ?? "{}";

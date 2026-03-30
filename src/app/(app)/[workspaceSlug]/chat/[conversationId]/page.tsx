@@ -28,11 +28,11 @@ export default async function ConversationPage({
   if (conversation && conversation.userId !== session.user.id) notFound();
   if (conversation && conversation.workspaceId !== workspace.id) notFound();
 
-  const hasDocuments =
-    (await prisma.document.count({
-      where: { workspaceId: workspace.id, status: "INDEXED" },
-    })) > 0;
-
+  const documents = await prisma.document.findMany({
+    where: { workspaceId: workspace.id, status: "INDEXED" },
+    select: { id: true, title: true },
+    orderBy: { createdAt: "desc" },
+  });
   // Convert DB messages → UIMessage format that the AI SDK's useChat expects
   const initialMessages: UIMessage[] = (conversation?.messages ?? []).map(
     (msg) => ({
@@ -54,7 +54,8 @@ export default async function ConversationPage({
       </div>
       <ChatClient
         workspaceId={workspace.id}
-        hasDocuments={hasDocuments}
+        hasDocuments={documents.length > 0}
+        documents={documents}
         conversationId={conversationId}
         workspaceSlug={workspace.slug}
         initialMessages={initialMessages}

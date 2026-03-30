@@ -27,8 +27,13 @@ export async function POST(req: NextRequest) {
     messages,
     workspaceId,
     conversationId,
-  }: { messages: UIMessage[]; workspaceId: string; conversationId: string } =
-    await req.json();
+    documentId,
+  }: {
+    messages: UIMessage[];
+    workspaceId: string;
+    conversationId: string;
+    documentId?: string;
+  } = await req.json();
 
   if (!workspaceId) {
     return NextResponse.json(
@@ -89,23 +94,55 @@ export async function POST(req: NextRequest) {
     .filter((p) => p.type === "text")
     .map((p) => (p as { type: "text"; text: string }).text)
     .join(" ");
+  console.log("Last message text:", lastMessageText);
+
+  // Fetch selected document summary for query enhancement
+  let queryText = lastMessageText;
+  if (documentId) {
+    const document = await prisma.document.findUnique({
+      where: { id: documentId, workspaceId },
+      select: { summary: true, title: true },
+    });
+    if (document?.summary) {
+      const rewriteResponse = await openaiClient.chat.completions.create({
+        model: "gpt-4o-mini",
+        max_tokens: 100,
+        messages: [
+          {
+            role: "system",
+            content:
+              "You rewrite user question into detailed search query for fetching relevant RAG chunks. Note query should be declarative phrases that would appear in a document. Use the document summary as context to make the query more specific. Return only the rewritten query — no explanation.",
+          },
+          {
+            role: "user",
+            content: `Document summary: ${document.summary}\n\nUser question: ${lastMessageText}`,
+          },
+        ],
+      });
+      queryText =
+        rewriteResponse.choices[0]?.message?.content?.trim() ?? lastMessageText;
+      console.log("Rewritten query text:", queryText);
+    }
+  }
 
   const embeddingResponse = await openaiClient.embeddings.create({
     model: "text-embedding-3-small",
-    input: lastMessageText,
+    input: queryText,
   });
   const queryEmbedding = embeddingResponse.data[0].embedding;
 
   // Query Pinecone for top 5 relevant chunks in this workspace
   const index = pineconeIndex.namespace(workspaceId);
+
   const queryResult = await index.query({
     vector: queryEmbedding,
-    topK: 3,
+    topK: 5,
     includeMetadata: true,
+    ...(documentId && { filter: { documentId: { $eq: documentId } } }),
   });
 
   const chunks = queryResult.matches
-    .filter((m) => m.score && m.score > 0.35)
+    .filter((m) => m.score && m.score > 0.2)
     .map((m) => ({
       ...(m.metadata as {
         text: string;
@@ -143,6 +180,8 @@ ${contextBlock}
     maxOutputTokens: 1500,
     onFinish: async ({ text, usage }) => {
       // Persist conversation and messages asynchronously (non-blocking)
+      console.log(text);
+
       try {
         const userId = session.user.id;
 
@@ -207,7 +246,7 @@ ${contextBlock}
         await prisma.queryLog.create({
           data: {
             query: lastMessageText,
-            answeredSuccessfully: chunks.some((c) => c.score > 0.5),
+            answeredSuccessfully: chunks.some((c) => c.score > 0.2),
             responseTimeMs: Date.now() - startTime,
             tokenCount: usage.totalTokens,
             workspaceId,

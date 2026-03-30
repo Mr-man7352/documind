@@ -19,6 +19,7 @@ interface ChatClientProps {
   conversationId: string;
   initialMessages?: UIMessage[];
   workspaceSlug: string;
+  documents: { id: string; title: string }[];
 }
 
 export function ChatClient({
@@ -27,10 +28,14 @@ export function ChatClient({
   conversationId,
   initialMessages,
   workspaceSlug,
+  documents,
 }: ChatClientProps) {
+  console.log("documents", documents);
   const [selectedSource, setSelectedSource] = useState<Source | null>(null);
   const [selectedIndex, setSelectedIndex] = useState<number>(0);
   const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [selectedDocumentId, setSelectedDocumentId] = useState<string>("");
+
   const { setIsMobileOpen } = useChatSidebar();
 
   const router = useRouter();
@@ -41,11 +46,10 @@ export function ChatClient({
     () =>
       new DefaultChatTransport({
         api: "/api/chat",
-        body: { workspaceId, conversationId },
+        body: { workspaceId, conversationId, documentId: selectedDocumentId },
       }),
-    [workspaceId, conversationId],
+    [workspaceId, conversationId, selectedDocumentId],
   );
-
   const { messages, sendMessage, status, stop } = useChat({
     transport,
     messages: initialMessages,
@@ -101,9 +105,8 @@ export function ChatClient({
     const el = textareaRef.current;
     if (!el) return;
     const text = el.value.trim();
-    if (!text || isStreaming) return;
+    if (!text || isStreaming || !selectedDocumentId) return;
     sendMessage({ text });
-    console.log("my:", text);
     el.value = "";
     el.style.height = "auto";
   }
@@ -325,6 +328,31 @@ export function ChatClient({
           )}
           {/* ── Input bar ── */}
           <div className="border-t pt-4">
+            {/* Document selector chips */}
+            <div className="mb-2 flex flex-wrap gap-2">
+              {documents.map((doc) => (
+                <button
+                  key={doc.id}
+                  type="button"
+                  disabled={isStreaming}
+                  onClick={() =>
+                    setSelectedDocumentId(
+                      selectedDocumentId === doc.id ? "" : doc.id,
+                    )
+                  }
+                  className={cn(
+                    "rounded-full border px-3 py-1 text-xs font-medium transition-colors disabled:opacity-50 truncate max-w-[200px]",
+                    selectedDocumentId === doc.id
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "bg-background text-muted-foreground hover:bg-muted",
+                  )}
+                  title={doc.title}
+                >
+                  {doc.title}
+                </button>
+              ))}
+            </div>
+
             <div className="flex items-end gap-2">
               {/* Hamburger — mobile only, opens conversation sidebar */}
               <button
@@ -355,6 +383,7 @@ export function ChatClient({
               ) : (
                 <button
                   onClick={submit}
+                  disabled={!selectedDocumentId}
                   className="shrink-0 flex items-center justify-center h-10 w-10 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
                   aria-label="Send message"
                 >
