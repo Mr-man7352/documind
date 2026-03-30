@@ -80,7 +80,9 @@ export async function getUnansweredQuestions(workspaceId: string) {
       workspaceId,
       answeredSuccessfully: false,
     },
+    orderBy: { createdAt: "desc" },
     select: { query: true },
+    take: 10, // cap rows fetched — we only need top 10 after grouping
   });
 
   // Count occurrences of each query

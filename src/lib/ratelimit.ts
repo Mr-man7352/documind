@@ -1,10 +1,5 @@
 import { Ratelimit } from "@upstash/ratelimit";
-import { Redis } from "@upstash/redis";
-
-const redis = new Redis({
-  url: process.env.UPSTASH_REDIS_REST_URL!,
-  token: process.env.UPSTASH_REDIS_REST_TOKEN!,
-});
+import { redis } from "@/lib/redis";
 
 // Sliding window: 100 requests per 60 seconds, keyed by API key prefix
 export const widgetRatelimit = new Ratelimit({

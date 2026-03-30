@@ -1,16 +1,11 @@
 import { Pinecone } from "@pinecone-database/pinecone";
 
-const pinecone = new Pinecone({
-  apiKey: process.env.PINECONE_API_KEY!,
-});
+const apiKey = process.env.PINECONE_API_KEY;
+const indexName = process.env.PINECONE_INDEX;
 
-export const pineconeIndex = pinecone.index({
-  name: process.env.PINECONE_INDEX!,
-});
+if (!apiKey) throw new Error("Missing environment variable: PINECONE_API_KEY");
+if (!indexName) throw new Error("Missing environment variable: PINECONE_INDEX");
 
-// too see the similarity metric and embedding model used in the index, you can check the index description
-// const indexDescription = await pinecone.describeIndex(
-//   process.env.PINECONE_INDEX!,
-// );
+const pinecone = new Pinecone({ apiKey });
 
-// console.log(indexDescription);
+export const pineconeIndex = pinecone.index({ name: indexName });
