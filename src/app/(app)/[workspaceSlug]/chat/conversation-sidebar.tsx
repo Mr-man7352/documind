@@ -4,9 +4,10 @@ import { useState } from "react";
 import Link from "next/link";
 
 import { usePathname } from "next/navigation";
-import { MoreHorizontal, Plus, Trash2, MessageSquare } from "lucide-react";
+import { MoreHorizontal, Plus, Trash2, MessageSquare, X } from "lucide-react";
 import { deleteConversation } from "@/actions/conversation";
 import { cn } from "@/lib/utils";
+import { useChatSidebar } from "./chat-sidebar-context";
 
 interface Conversation {
   id: string;
@@ -42,14 +43,42 @@ export function ConversationSidebar({
   const pathname = usePathname();
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const { isMobileOpen, setIsMobileOpen } = useChatSidebar();
 
   return (
-    <div className="w-64 border-r flex flex-col h-full shrink-0">
+    <>
+      {/* Backdrop — closes sidebar when tapping outside */}
+      {isMobileOpen && (
+        <div
+          className="fixed inset-0 bg-black/40 z-30 md:hidden"
+          onClick={() => setIsMobileOpen(false)}
+        />
+      )}
+
+      {/* Sidebar panel */}
+      <div
+        className={cn(
+          "fixed md:relative inset-y-0 left-0 z-40 w-64 border-r flex flex-col h-full shrink-0 bg-sidebar transition-transform duration-200",
+          isMobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0",
+        )}
+      >
+        {/* Mobile header with close button */}
+        <div className="flex items-center justify-between p-3 border-b md:hidden">
+          <span className="text-sm font-semibold">Conversations</span>
+          <button
+            onClick={() => setIsMobileOpen(false)}
+            className="p-1 rounded hover:bg-accent"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
       {/* New Conversation button */}
       <div className="p-3 border-b">
         <Link
           href={`/${workspaceSlug}/chat`}
           className="flex items-center gap-2 w-full px-3 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
+          onClick={() => setIsMobileOpen(false)}
         >
           <Plus className="h-4 w-4" />
           New Conversation
@@ -80,7 +109,7 @@ export function ConversationSidebar({
                 <Link
                   href={`/${workspaceSlug}/chat/${convo.id}`}
                   className="flex-1 min-w-0"
-                  onClick={() => setMenuOpenId(null)}
+                  onClick={() => { setMenuOpenId(null); setIsMobileOpen(false); }}
                 >
                   <p className="truncate font-medium text-foreground text-xs">
                     {convo.title ?? "Untitled"}
@@ -160,5 +189,6 @@ export function ConversationSidebar({
         )}
       </div>
     </div>
+    </>
   );
 }

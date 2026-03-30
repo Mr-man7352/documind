@@ -5,12 +5,13 @@ import { DefaultChatTransport, UIMessage } from "ai";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { SourceChips, Source } from "./source-chips";
 import { SourcePanel } from "./source-panel";
-import { Send, Square, MessageSquare, ArrowRight } from "lucide-react";
+import { Send, Square, MessageSquare, ArrowRight, Menu } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useChatSidebar } from "./chat-sidebar-context";
 
 interface ChatClientProps {
   workspaceId: string;
@@ -30,6 +31,7 @@ export function ChatClient({
   const [selectedSource, setSelectedSource] = useState<Source | null>(null);
   const [selectedIndex, setSelectedIndex] = useState<number>(0);
   const [suggestions, setSuggestions] = useState<string[]>([]);
+  const { setIsMobileOpen } = useChatSidebar();
 
   const router = useRouter();
   const pathname = usePathname();
@@ -324,6 +326,14 @@ export function ChatClient({
           {/* ── Input bar ── */}
           <div className="border-t pt-4">
             <div className="flex items-end gap-2">
+              {/* Hamburger — mobile only, opens conversation sidebar */}
+              <button
+                className="md:hidden shrink-0 flex items-center justify-center h-10 w-10 rounded-xl border bg-background hover:bg-muted transition-colors"
+                onClick={() => setIsMobileOpen(true)}
+                aria-label="Open conversations"
+              >
+                <Menu className="h-4 w-4" />
+              </button>
               <textarea
                 ref={textareaRef}
                 rows={1}

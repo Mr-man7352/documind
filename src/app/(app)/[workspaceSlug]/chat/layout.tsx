@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import { getConversations } from "@/actions/conversation";
 import { ConversationSidebar } from "./conversation-sidebar";
+import { ChatSidebarProvider } from "./chat-sidebar-context";
 
 export default async function ChatLayout({
   children,
@@ -24,12 +25,14 @@ export default async function ChatLayout({
   const conversations = await getConversations(workspace.id);
 
   return (
-    <div className="flex h-full -mx-2 my-0">
-      <ConversationSidebar
-        conversations={conversations}
-        workspaceSlug={workspaceSlug}
-      />
-      <div className="flex-1 overflow-hidden p-8 pb-[unset]">{children}</div>
-    </div>
+    <ChatSidebarProvider>
+      <div className="flex h-full -mx-2 my-0">
+        <ConversationSidebar
+          conversations={conversations}
+          workspaceSlug={workspaceSlug}
+        />
+        <div className="flex-1 overflow-hidden p-8 pb-[unset] w-full">{children}</div>
+      </div>
+    </ChatSidebarProvider>
   );
 }
