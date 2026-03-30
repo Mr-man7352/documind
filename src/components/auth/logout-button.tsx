@@ -8,7 +8,11 @@ export function LogoutButton() {
 
   const handleLogout = async () => {
     setLoading(true);
-    await signOut({ callbackUrl: "/login" });
+    try {
+      await signOut({ callbackUrl: "/login" });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

@@ -22,8 +22,6 @@ export default async function AuthCallbackPage() {
     redirect(`/${membership.workspace.slug}/dashboard`);
   }
 
-
-  console.log("No workspace found for user, redirecting to onboarding");
   // New user with no workspace → go to onboarding
   redirect("/onboarding");
 }

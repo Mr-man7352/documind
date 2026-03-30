@@ -4,6 +4,15 @@ import { signIn } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
 import { useState, Suspense } from "react";
 
+const AUTH_ERROR_MESSAGES: Record<string, string> = {
+  OAuthAccountNotLinked:
+    "This email is already associated with another sign-in method. Please use your original sign-in provider.",
+  OAuthCallbackError:
+    "There was a problem completing the sign-in. Please try again.",
+  OAuthSignin:
+    "Could not start the sign-in process. Please check your provider configuration.",
+};
+
 function LoginContent() {
   const searchParams = useSearchParams();
   const error = searchParams.get("error");
@@ -35,13 +44,7 @@ function LoginContent() {
           <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
             <p className="font-medium">Sign-in failed</p>
             <p className="mt-1">
-              {error === "OAuthAccountNotLinked"
-                ? "This email is already associated with another sign-in method. Please use your original sign-in provider."
-                : error === "OAuthCallbackError"
-                  ? "There was a problem completing the sign-in. Please try again."
-                  : error === "OAuthSignin"
-                    ? "Could not start the sign-in process. Please check your provider configuration."
-                    : `Error: ${error}`}
+              {AUTH_ERROR_MESSAGES[error!] ?? `Error: ${error}`}
             </p>
           </div>
         )}
