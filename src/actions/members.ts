@@ -5,7 +5,7 @@ import { requireAuth } from "@/lib/auth-session";
 import { checkUserPermission } from "@/lib/permissions";
 import { VALID_ROLES } from "@/lib/roles";
 
-// change role of a member
+// ─── Change Role ───────────────────────────────────────────────
 
 export async function changeRole(
   targetMembershipId: string,
@@ -21,7 +21,11 @@ export async function changeRole(
   const userId = session.user.id;
 
   // Only admins and above can change roles
-  await checkUserPermission(userId, workspaceId, "admin");
+  try {
+    await checkUserPermission(userId, workspaceId, "admin");
+  } catch {
+    return { error: "You don't have permission to change roles." };
+  }
 
   const target = await prisma.membership.findUnique({
     where: {
@@ -57,7 +61,7 @@ export async function changeRole(
   return { success: true };
 }
 
-// remove a member from workspace
+// ─── Remove Member ─────────────────────────────────────────────
 
 export async function removeMember(
   targetMembershipId: string,
@@ -67,7 +71,11 @@ export async function removeMember(
   const userId = session.user.id;
 
   // Only admins and above can remove members
-  await checkUserPermission(userId, workspaceId, "admin");
+  try {
+    await checkUserPermission(userId, workspaceId, "admin");
+  } catch {
+    return { error: "You don't have permission to remove members." };
+  }
 
   const target = await prisma.membership.findUnique({
     where: { id: targetMembershipId },

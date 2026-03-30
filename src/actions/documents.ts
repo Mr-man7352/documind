@@ -58,9 +58,6 @@ export async function reprocessDocument(
     return { error: "Document not found." };
   }
 
-  console.log(
-    `[reprocessDocument] User ${session.user.id} requested re-processing for document ${document.status} in workspace ${workspaceId}`,
-  );
   if (document.status !== "INDEXED" && document.status !== "ERROR") {
     return { error: "Document is not in a re-processable state." };
   }

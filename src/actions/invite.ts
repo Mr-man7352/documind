@@ -10,6 +10,7 @@ import InviteEmail from "@/emails/invite-email";
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 const INVITABLE_ROLES = ["member", "viewer"] as const;
+const INVITE_EXPIRY_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 
 export async function sendInvitation(
   email: string,
@@ -25,21 +26,6 @@ export async function sendInvitation(
   const userId = session.user.id;
 
   // 1. Check the current user is Owner or Admin in this workspace
-  console.log(
-    "Checking permissions for user",
-    userId,
-    "in workspace",
-    workspaceId,
-  );
-  const membership = await prisma.membership.findUnique({
-    where: {
-      userId_workspaceId: {
-        userId,
-        workspaceId,
-      },
-    },
-  });
-
   try {
     await checkUserPermission(userId, workspaceId, "admin");
   } catch {
@@ -76,7 +62,7 @@ export async function sendInvitation(
       where: { id: existing.id },
       data: {
         token: crypto.randomUUID(),
-        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+        expiresAt: new Date(Date.now() + INVITE_EXPIRY_MS), // 7 days
       },
     });
 
@@ -104,7 +90,7 @@ export async function sendInvitation(
       workspaceId,
       role,
       token: crypto.randomUUID(),
-      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+      expiresAt: new Date(Date.now() + INVITE_EXPIRY_MS), // 7 days
       status: "PENDING",
     },
   });
@@ -142,12 +128,6 @@ export async function revokeInvitation(invitationId: string) {
   }
 
   // Only Owner/Admin can revoke
-  const membership = await prisma.membership.findUnique({
-    where: {
-      userId_workspaceId: { userId, workspaceId: invitation.workspaceId },
-    },
-  });
-
   try {
     await checkUserPermission(userId, invitation.workspaceId, "admin");
   } catch {
@@ -178,7 +158,7 @@ async function sendInviteEmail({
   const inviteUrl = `${process.env.NEXTAUTH_URL}/invite/${token}`;
 
   const { data, error } = await resend.emails.send({
-    from: "DocuMind <onboarding@resend.dev>", // ← update this
+    from: "DocuMind <onboarding@resend.dev>",
     to: email,
     subject: `${inviterName} invited you to join ${workspaceName} on DocuMind`,
     react: InviteEmail({
@@ -193,5 +173,4 @@ async function sendInviteEmail({
     throw new Error(`Failed to send email: ${error.message}`);
   }
 
-  console.log("Email sent successfully:", data?.id);
 }
