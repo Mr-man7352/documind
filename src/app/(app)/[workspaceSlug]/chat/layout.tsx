@@ -31,7 +31,9 @@ export default async function ChatLayout({
           conversations={conversations}
           workspaceSlug={workspaceSlug}
         />
-        <div className="flex-1 overflow-hidden p-8 pb-[unset] w-full">{children}</div>
+        <div className="flex-1 overflow-hidden p-4 md:p-8 pb-[unset] w-full">
+          {children}
+        </div>
       </div>
     </ChatSidebarProvider>
   );

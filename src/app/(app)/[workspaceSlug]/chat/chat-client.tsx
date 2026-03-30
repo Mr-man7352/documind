@@ -30,7 +30,6 @@ export function ChatClient({
   workspaceSlug,
   documents,
 }: ChatClientProps) {
-  console.log("documents", documents);
   const [selectedSource, setSelectedSource] = useState<Source | null>(null);
   const [selectedIndex, setSelectedIndex] = useState<number>(0);
   const [suggestions, setSuggestions] = useState<string[]>([]);
@@ -41,15 +40,30 @@ export function ChatClient({
   const router = useRouter();
   const pathname = usePathname();
   const hasNavigatedRef = useRef(false);
+  const selectedDocumentIdRef = useRef(selectedDocumentId);
+  useEffect(() => {
+    selectedDocumentIdRef.current = selectedDocumentId;
+  }, [selectedDocumentId]);
 
   const transport = useMemo(
     () =>
       new DefaultChatTransport({
         api: "/api/chat",
-        body: { workspaceId, conversationId, documentId: selectedDocumentId },
+        body: { workspaceId, conversationId },
+        fetch: async (url, init) => {
+          const body = JSON.parse((init?.body as string) ?? "{}");
+          return fetch(url, {
+            ...init,
+            body: JSON.stringify({
+              ...body,
+              documentId: selectedDocumentIdRef.current,
+            }),
+          });
+        },
       }),
-    [workspaceId, conversationId, selectedDocumentId],
+    [workspaceId, conversationId], // ← selectedDocumentId removed
   );
+  // console.log("initialMessages", initialMessages);
   const { messages, sendMessage, status, stop } = useChat({
     transport,
     messages: initialMessages,
@@ -62,6 +76,7 @@ export function ChatClient({
 
   // Scroll to bottom on new messages
   useEffect(() => {
+    // console.log("messages", messages);
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
@@ -119,7 +134,7 @@ export function ChatClient({
           chatting.
         </div>
       ) : (
-        <div className="flex flex-col h-[calc(100vh-4rem)]">
+        <div className="flex flex-col h-[calc(100dvh-4rem)]">
           {/* ── Message list ── */}
           <div className="flex-1 overflow-y-auto py-4 space-y-4">
             {messages.length === 0 ? (
@@ -168,7 +183,7 @@ export function ChatClient({
                 if (!isUser && !textContent)
                   return (
                     <div
-                      key={crypto.randomUUID()}
+                      key={`loading-${message.id}`}
                       className="flex justify-start"
                     >
                       <div className="bg-muted rounded-2xl rounded-bl-sm px-4 py-3">
@@ -191,13 +206,13 @@ export function ChatClient({
                     >
                       <div
                         className={cn(
-                          "flex flex-col max-w-[75%]",
+                          "flex flex-col max-w-[85%] md:max-w-[75%] lg:max-w-[60%]",
                           isUser ? "items-end" : "items-start",
                         )}
                       >
                         <div
                           className={cn(
-                            "rounded-2xl px-4 py-3 text-sm leading-relaxed w-full",
+                            "rounded-2xl px-4 py-3 text-sm leading-relaxed ",
                             isUser
                               ? "bg-primary text-primary-foreground rounded-br-sm"
                               : "bg-muted text-foreground rounded-bl-sm",

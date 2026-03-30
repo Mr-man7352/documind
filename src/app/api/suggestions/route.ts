@@ -75,7 +75,7 @@ export async function GET(req: NextRequest) {
     .join("\n\n");
 
   const response = await openaiClient.chat.completions.create({
-    model: "gpt-5-nano",
+    model: "gpt-4o-mini",
     messages: [
       {
         role: "user",

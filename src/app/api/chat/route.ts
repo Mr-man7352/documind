@@ -165,7 +165,7 @@ export async function POST(req: NextRequest) {
 
   const systemPrompt = `You are a helpful assistant that answers questions based on the user's documents.
 
-Use the following document excerpts to answer the user's question. If the answer is not found in the context, say so honestly — do not make up information.
+Use the following document excerpts to answer the user's question. If the answer is not found in the context, then say "I don't know" — do not make up information.
 
 <context>
 ${contextBlock}
@@ -174,7 +174,7 @@ ${contextBlock}
   // Stream the response
   const startTime = Date.now();
   const result = streamText({
-    model: openai("gpt-5-nano"), // will use the cheapest available gpt-5 model
+    model: openai("gpt-4o-mini"),
     system: systemPrompt,
     messages: await convertToModelMessages(messages),
     maxOutputTokens: 1500,
@@ -183,6 +183,9 @@ ${contextBlock}
       console.log(text);
 
       try {
+        const responseText =
+          text?.trim() ||
+          "Sorry, I couldn't generate an answer. Please try again.";
         const userId = session.user.id;
 
         // Manual find-or-create (upsert uses transactions, not supported in HTTP mode)
@@ -212,6 +215,9 @@ ${contextBlock}
         // Only save the NEW messages — last user message + this assistant response
 
         // transaction is not supported in edge runtime, so we do sequential operations with best effort to maintain consistency
+        console.log(
+          "Persisting user message and assistant response to the database...",
+        );
         await prisma.message.create({
           data: {
             role: "user",
@@ -224,7 +230,7 @@ ${contextBlock}
         await prisma.message.create({
           data: {
             role: "assistant",
-            content: text,
+            content: responseText,
             conversationId,
             sources: chunks.map((c) => ({
               title: c.title,
